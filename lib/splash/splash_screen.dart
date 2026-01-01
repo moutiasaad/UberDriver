@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
-          'assets/icon/icon.png',
+          'assets/tshl_tawsil_captin_icon.png',
           height: 240,
           width: 200,
           fit: BoxFit.cover,
