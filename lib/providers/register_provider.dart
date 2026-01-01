@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +7,7 @@ import '../shared/components/loading/icon_loader.dart';
 import '../shared/local/cash_helper.dart';
 import '../shared/local/secure_cash_helper.dart';
 import '../shared/remote/dio_helper.dart';
+import '../shared/remote/fcm_service.dart';
 import '../view/layout/driver_home_layout.dart';
 
 class RegisterProvider extends ChangeNotifier {
@@ -127,6 +126,9 @@ class RegisterProvider extends ChangeNotifier {
 
         // Store additional driver info if needed
         await _storeDriverProfile(driverData);
+
+        // Send FCM token to server
+        await FcmService.sendTokenToServer();
 
         loading = false;
         notifyListeners();

@@ -111,7 +111,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                   ],
                 ),
                 child: Icon(
-                  Icons.arrow_back,
+                  Icons.arrow_forward,
                   color: IconColors.black,
                   size: 24,
                 ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:uber_driver/shared/language/extension.dart';
 import '../../../utils/colors.dart';
+import '../../main.dart';
+import '../../providers/order_provider.dart';
 import '../../shared/components/image/svg_icon.dart';
 import '../../utils/app_icons.dart';
 import '../../utils/app_text_styles.dart';
@@ -16,7 +19,7 @@ class DriverHomeLayout extends StatefulWidget {
   State<DriverHomeLayout> createState() => _DriverHomeLayoutState();
 }
 
-class _DriverHomeLayoutState extends State<DriverHomeLayout> {
+class _DriverHomeLayoutState extends State<DriverHomeLayout> with RouteAware {
   int currentIndex = 0;
   var scaffoldKEy = GlobalKey<ScaffoldState>();
   PageController? homeLayoutController = PageController(initialPage: 0);
@@ -29,9 +32,33 @@ class _DriverHomeLayoutState extends State<DriverHomeLayout> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Subscribe to route observer
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showDialogsInSequence(); // Call your dialog sequence here
+      _showDialogsInSequence();
     });
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // Called when returning to this screen from another screen
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // Refresh home screen data when returning from any screen (like ActiveRideScreen)
+    _refreshHomeData();
+  }
+
+  void _refreshHomeData() {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    orderProvider.refreshPendingRides();
   }
 
   void _showDialogsInSequence() async {

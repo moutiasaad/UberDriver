@@ -1,33 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../utils/app_images.dart';
+
 import '../../../utils/app_text_styles.dart';
 import '../../../utils/colors.dart' show AppColors;
 import '../buttons/default_button.dart';
-import 'full_map_screen.dart';
 
 class MapTrack extends StatefulWidget {
-  const MapTrack(
-      {super.key,
-      required this.latitudeS,
-      required this.longitudeS,
-        this.latitudeC,
-        this.longitudeC,
-      this.merchantName,
-      this.userName,
-      this.onFullScreen = false,
-      this.selectResult,
-      this.zoom = 16});
+  const MapTrack({
+    super.key,
+    required this.latitudeS,
+    required this.longitudeS,
+    this.latitudeC,
+    this.longitudeC,
+    this.merchantName,
+    this.userName,
+    this.onFullScreen = false,
+    this.selectResult,
+    this.zoom = 16,
+  });
 
   final double latitudeS;
   final double longitudeS;
@@ -40,257 +38,117 @@ class MapTrack extends StatefulWidget {
   final double zoom;
 
   @override
-  _MapTrackState createState() => _MapTrackState();
+  State<MapTrack> createState() => _MapTrackState();
 }
 
 class _MapTrackState extends State<MapTrack> {
-  late GoogleMapController mapController;
-  BitmapDescriptor? _customIconShop;
-  BitmapDescriptor? _customIconCustomer;
-  bool doneLoading = false;
+  final MapController _mapController = MapController();
   late LatLng _center;
   Position? _currentPosition;
-  Marker? _userMarker;
   List<LatLng> _pathPoints = [];
-  Polyline? _movementPolyline;
-  Polyline? _routePolyline;
+  List<LatLng> _routePoints = [];
   StreamSubscription<Position>? _positionStream;
-  bool _mapCreated = false;
+  bool _mapReady = false;
   String? _estimatedTime;
   String? _estimatedDistance;
 
-  // Replace with your Google Maps API key
-  static const String _googleMapsApiKey =
-      'AIzaSyCrDYCXAVQZeXxbZx84iRVe5SMmBpm5sy8';
-
   @override
   void initState() {
-    print('MapTrack: initState called');
-    _center = LatLng(widget.latitudeS, widget.longitudeS);
-    print(
-        'MapTrack: Merchant location set to ${_center.latitude}, ${_center.longitude}');
-
-    _loadCustomIcon().then((value) {
-      print('MapTrack: Custom icons loaded');
-      setState(() {
-        doneLoading = true;
-      });
-    });
-    _startLocationTracking();
     super.initState();
+    _center = LatLng(widget.latitudeS, widget.longitudeS);
+    _startLocationTracking();
   }
 
   void _startLocationTracking() async {
-    print('MapTrack: Starting location tracking...');
-
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    print('MapTrack: Location service enabled: $serviceEnabled');
-    if (!serviceEnabled) {
-      print('MapTrack: Location services are disabled');
-      return;
-    }
+    if (!serviceEnabled) return;
 
     LocationPermission permission = await Geolocator.checkPermission();
-    print('MapTrack: Current permission: $permission');
-
     if (permission == LocationPermission.denied) {
-      print('MapTrack: Permission denied, requesting permission...');
       permission = await Geolocator.requestPermission();
-      print('MapTrack: Permission after request: $permission');
-      if (permission == LocationPermission.denied) {
-        print('MapTrack: Permission still denied after request');
-        return;
-      }
+      if (permission == LocationPermission.denied) return;
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      print('MapTrack: Permission denied forever');
-      return;
-    }
-
-    print('MapTrack: Permission granted, getting initial position...');
+    if (permission == LocationPermission.deniedForever) return;
 
     try {
       Position initialPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10),
+        timeLimit: const Duration(seconds: 10),
       );
-      print(
-          'MapTrack: Initial position obtained: ${initialPosition.latitude}, ${initialPosition.longitude}');
       _updateUserLocation(initialPosition);
     } catch (e) {
-      print('MapTrack: Error getting initial position: $e');
+      debugPrint('Error getting initial position: $e');
     }
 
-    print('MapTrack: Starting position stream...');
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update route every 10 meters
+        distanceFilter: 10,
       ),
     ).listen(
-      (Position position) {
-        print(
-            'MapTrack: New position received: ${position.latitude}, ${position.longitude}');
-        _updateUserLocation(position);
-      },
-      onError: (error) {
-        print('MapTrack: Position stream error: $error');
-      },
-      onDone: () {
-        print('MapTrack: Position stream done');
-      },
+      (Position position) => _updateUserLocation(position),
+      onError: (error) => debugPrint('Position stream error: $error'),
     );
   }
 
   void _updateUserLocation(Position position) {
-    print(
-        'MapTrack: Updating user location to ${position.latitude}, ${position.longitude}');
-
-    final userLatLng =
-        LatLng(position.latitude, position.longitude); // Define it here first
+    final userLatLng = LatLng(position.latitude, position.longitude);
 
     setState(() {
       _currentPosition = position;
       _pathPoints.add(userLatLng);
-
-      _userMarker = Marker(
-        markerId: const MarkerId('user'),
-        position: userLatLng,
-        icon: _customIconCustomer ??
-            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        infoWindow: InfoWindow(title: widget.userName ?? 'User'),
-      );
-
-      // Update movement path (user's trail)
-      _movementPolyline = Polyline(
-        polylineId: const PolylineId('movement_path'),
-        color: Colors.blue,
-        width: 3,
-        points: _pathPoints,
-      );
     });
 
-    // Get route from current position to merchant
     _getDirectionsRoute(userLatLng, _center);
 
-    if (_mapCreated && mapController != null) {
-      _focusOnUserAndMerchant();
+    if (_mapReady) {
+      _focusOnAllPoints();
     }
   }
 
   Future<void> _getDirectionsRoute(LatLng origin, LatLng destination) async {
-    print(
-        'MapTrack: Getting directions from ${origin.latitude},${origin.longitude} to ${destination.latitude},${destination.longitude}');
-
-    if (_googleMapsApiKey == 'YOUR_GOOGLE_MAPS_API_KEY') {
-      print('MapTrack: Please add your Google Maps API key');
-      // Fallback to straight line
-      _createStraightLineRoute(origin, destination);
-      return;
-    }
-
     try {
-      final String url = 'https://maps.googleapis.com/maps/api/directions/json?'
-          'origin=${origin.latitude},${origin.longitude}&'
-          'destination=${destination.latitude},${destination.longitude}&'
-          'mode=driving&'
-          'key=$_googleMapsApiKey';
+      // Use OSRM for free routing
+      final url = 'https://router.project-osrm.org/route/v1/driving/'
+          '${origin.longitude},${origin.latitude};'
+          '${destination.longitude},${destination.latitude}'
+          '?overview=full&geometries=geojson';
 
-      print('MapTrack: Making API request to: $url');
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('MapTrack: API response received');
 
-        if (data['status'] == 'OK' && data['routes'].isNotEmpty) {
+        if (data['routes'] != null && data['routes'].isNotEmpty) {
           final route = data['routes'][0];
-          final leg = route['legs'][0];
 
           // Extract duration and distance
-          _estimatedTime = leg['duration']['text'];
-          _estimatedDistance = leg['distance']['text'];
-          print(
-              'MapTrack: Route info - Distance: $_estimatedDistance, Time: $_estimatedTime');
+          final duration = route['duration']; // in seconds
+          final distance = route['distance']; // in meters
+
+          _estimatedTime = '${(duration / 60).round()} min';
+          _estimatedDistance = '${(distance / 1000).toStringAsFixed(1)} km';
 
           // Decode polyline points
-          final polylinePoints =
-              _decodePolyline(route['overview_polyline']['points']);
+          final coords = route['geometry']['coordinates'] as List;
+          _routePoints = coords
+              .map<LatLng>((c) => LatLng(c[1].toDouble(), c[0].toDouble()))
+              .toList();
 
-          setState(() {
-            _routePolyline = Polyline(
-              polylineId: const PolylineId('route_to_merchant'),
-              color: AppColors.primary,
-              width: 5,
-              points: polylinePoints,
-            );
-          });
-          print(
-              'MapTrack: Route polyline created with ${polylinePoints.length} points');
-        } else {
-          print('MapTrack: No routes found in API response: ${data['status']}');
-          _createStraightLineRoute(origin, destination);
+          setState(() {});
         }
-      } else {
-        print(
-            'MapTrack: API request failed with status: ${response.statusCode}');
-        _createStraightLineRoute(origin, destination);
       }
     } catch (e) {
-      print('MapTrack: Error getting directions: $e');
-      _createStraightLineRoute(origin, destination);
+      debugPrint('Error getting directions: $e');
+      // Fallback to straight line
+      setState(() {
+        _routePoints = [origin, destination];
+      });
     }
   }
 
-  void _createStraightLineRoute(LatLng origin, LatLng destination) {
-    print('MapTrack: Creating straight line route as fallback');
-    setState(() {
-      _routePolyline = Polyline(
-        polylineId: const PolylineId('route_to_merchant'),
-        color: AppColors.primary,
-        width: 5,
-        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-        points: [origin, destination],
-      );
-    });
-  }
-
-  List<LatLng> _decodePolyline(String polyline) {
-    List<LatLng> points = [];
-    int index = 0;
-    int len = polyline.length;
-    int lat = 0;
-    int lng = 0;
-
-    while (index < len) {
-      int b;
-      int shift = 0;
-      int result = 0;
-      do {
-        b = polyline.codeUnitAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-
-      shift = 0;
-      result = 0;
-      do {
-        b = polyline.codeUnitAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-
-      points.add(LatLng(lat / 1E5, lng / 1E5));
-    }
-    return points;
-  }
-
-  void _focusOnUserAndMerchant() {
+  void _focusOnAllPoints() {
     List<LatLng> points = [];
 
     if (_currentPosition != null) {
@@ -303,253 +161,260 @@ class _MapTrackState extends State<MapTrack> {
 
     if (points.isEmpty) return;
 
-    double minLat = points.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
-    double maxLat = points.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
-    double minLng = points.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
-    double maxLng = points.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
-
-    LatLngBounds bounds = LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-
-    mapController.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 100.0),
-    );
-  }
-
-
-  Future<void> _loadCustomIcon() async {
-    print('MapTrack: Loading custom icons...');
     try {
-      _customIconShop = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(size: Size(48, 48)),
-        AppImages.shopMarker,
+      final bounds = LatLngBounds.fromPoints(points);
+      _mapController.fitCamera(
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)),
       );
-      print('MapTrack: Shop icon loaded successfully');
     } catch (e) {
-      print('MapTrack: Error loading shop icon: $e');
-    }
-
-    try {
-      _customIconCustomer = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(size: Size(48, 48)),
-        AppImages.customerMarker,
-      );
-      print('MapTrack: Customer icon loaded successfully');
-    } catch (e) {
-      print('MapTrack: Error loading customer icon: $e');
+      // Ignore if map not ready
     }
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    print('MapTrack: Map created');
-    mapController = controller;
-    _mapCreated = true;
-
-    if (_currentPosition != null) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _focusOnUserAndMerchant();
-      });
-    } else {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        mapController.animateCamera(
-          CameraUpdate.newLatLngZoom(_center, widget.zoom),
-        );
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    print('MapTrack: Disposing...');
-    _positionStream?.cancel();
-    super.dispose();
-  }
   Future<void> _openExternalDirections() async {
     String url;
 
     if (widget.latitudeC != null && widget.longitudeC != null) {
-      // Client (B)
       String destination1 = '${widget.latitudeC},${widget.longitudeC}';
-      // Merchant (A)
       String destination2 = '${widget.latitudeS},${widget.longitudeS}';
-
-      // Route: current location → merchant → client
-      url =
-      'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=$destination1&waypoints=$destination2&travelmode=driving';
+      url = 'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=$destination1&waypoints=$destination2&travelmode=driving';
     } else {
-      // Only merchant available
       String destination1 = '${widget.latitudeS},${widget.longitudeS}';
-      url =
-      'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=$destination1&travelmode=driving';
+      url = 'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=$destination1&travelmode=driving';
     }
 
     final uri = Uri.parse(url);
-
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      throw 'Could not launch $url';
     }
   }
 
+  List<Marker> _buildMarkers() {
+    final markers = <Marker>[];
+
+    // Merchant marker
+    markers.add(
+      Marker(
+        point: _center,
+        width: 40,
+        height: 40,
+        child: Tooltip(
+          message: widget.merchantName ?? 'Merchant',
+          child: const Icon(
+            Icons.store,
+            color: Colors.green,
+            size: 36,
+          ),
+        ),
+      ),
+    );
+
+    // Client marker (if provided)
+    if (widget.latitudeC != null && widget.longitudeC != null) {
+      markers.add(
+        Marker(
+          point: LatLng(widget.latitudeC!, widget.longitudeC!),
+          width: 40,
+          height: 40,
+          child: Tooltip(
+            message: widget.userName ?? 'Client',
+            child: const Icon(
+              Icons.person_pin_circle,
+              color: Colors.orange,
+              size: 36,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Driver (live) marker
+    if (_currentPosition != null) {
+      markers.add(
+        Marker(
+          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          width: 40,
+          height: 40,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: const Icon(
+              Icons.directions_car,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  List<Polyline> _buildPolylines() {
+    final polylines = <Polyline>[];
+
+    // Movement path (user's trail)
+    if (_pathPoints.length > 1) {
+      polylines.add(
+        Polyline(
+          points: _pathPoints,
+          color: Colors.blue,
+          strokeWidth: 3,
+        ),
+      );
+    }
+
+    // Route to merchant
+    if (_routePoints.isNotEmpty) {
+      polylines.add(
+        Polyline(
+          points: _routePoints,
+          color: AppColors.primary,
+          strokeWidth: 5,
+        ),
+      );
+    }
+
+    // Line between merchant and client
+    if (widget.latitudeC != null && widget.longitudeC != null) {
+      polylines.add(
+        Polyline(
+          points: [
+            LatLng(widget.latitudeS, widget.longitudeS),
+            LatLng(widget.latitudeC!, widget.longitudeC!),
+          ],
+          color: Colors.orange,
+          strokeWidth: 4,
+          pattern: const StrokePattern.dotted(),
+        ),
+      );
+    }
+
+    return polylines;
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return doneLoading
-        ? Stack(
-            children: [
-              Container(
-                child: GoogleMap(
-                  gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                    Factory<OneSequenceGestureRecognizer>(
-                        () => EagerGestureRecognizer()),
-                  },
-                  mapType: MapType.normal,
-                  markers: {
-                    // Merchant marker
-                    Marker(
-                      markerId: const MarkerId('merchant'),
-                      position: _center,
-                      icon: _customIconShop ?? BitmapDescriptor.defaultMarker,
-                      infoWindow: InfoWindow(
-                        title: widget.merchantName ?? 'Merchant',
-                      ),
-                    ),
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _currentPosition != null
+                ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                : _center,
+            initialZoom: widget.zoom,
+            onMapReady: () {
+              _mapReady = true;
+              if (_currentPosition != null) {
+                Future.delayed(const Duration(milliseconds: 500), _focusOnAllPoints);
+              }
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.uber_driver',
+            ),
+            PolylineLayer(polylines: _buildPolylines()),
+            MarkerLayer(markers: _buildMarkers()),
+          ],
+        ),
 
-                    // Client marker (if provided)
-                    if (widget.latitudeC != null && widget.longitudeC != null)
-                      Marker(
-                        markerId: const MarkerId('client'),
-                        position: LatLng(widget.latitudeC!, widget.longitudeC!),
-                        icon: _customIconCustomer ??
-                            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                        infoWindow: InfoWindow(title: widget.userName ?? 'Client'),
-                      ),
+        // Navigate button
+        if (widget.onFullScreen)
+          Positioned(
+            top: 60,
+            right: 10,
+            child: DefaultButton(
+              textStyle: AppTextStyle.mediumWhite12,
+              width: 80,
+              height: 28,
+              text: 'تتبع المسار',
+              pressed: _openExternalDirections,
+              activated: true,
+            ),
+          ),
 
-                    // Driver (live) marker
-                    if (_userMarker != null) _userMarker!,
-                  },
-
-                  polylines: {
-                    if (_movementPolyline != null) _movementPolyline!,
-                    if (_routePolyline != null) _routePolyline!,
-
-                    // 🔹 Add this polyline between merchant and client
-                    if (widget.latitudeC != null && widget.longitudeC != null)
-                      Polyline(
-                        polylineId: const PolylineId('merchant_client_line'),
-                        color: Colors.orange,
-                        width: 4,
-                        patterns: [PatternItem.dash(15), PatternItem.gap(10)],
-                        points: [
-                          LatLng(widget.latitudeS, widget.longitudeS),
-                          LatLng(widget.latitudeC!, widget.longitudeC!)
-                        ],
-                      ),
-                  },
-
-                  onMapCreated: _onMapCreated,
-                  initialCameraPosition: CameraPosition(
-                    target: _currentPosition != null
-                        ? LatLng(_currentPosition!.latitude,
-                            _currentPosition!.longitude)
-                        : _center,
-                    zoom: widget.zoom,
+        // Route info overlay
+        if (_estimatedTime != null && _estimatedDistance != null)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
-                ),
+                ],
               ),
-              if (widget.onFullScreen)
-                Positioned(
-                  top: 360,
-                  right: 320,
-                  child: DefaultButton(
-                    textStyle: AppTextStyle.mediumWhite12,
-                    width: 80,
-                    height: 28,
-                    text: 'تتبع المسار',
-                    pressed: _openExternalDirections, // <-- call the method
-                    activated: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 16, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      Text(_estimatedTime!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.straighten, size: 16, color: Colors.green),
+                      const SizedBox(width: 4),
+                      Text(_estimatedDistance!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
 
-              // Route info overlay
-              if (_estimatedTime != null && _estimatedDistance != null)
-                Positioned(
-                  top: 10,
-                  right: 320,
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.access_time,
-                                size: 16, color: Colors.blue),
-                            SizedBox(width: 4),
-                            Text(_estimatedTime!,
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.straighten,
-                                size: 16, color: Colors.green),
-                            SizedBox(width: 4),
-                            Text(_estimatedDistance!,
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ],
-                    ),
+        // Debug info overlay (only in debug mode)
+        if (kDebugMode)
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.black54,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'User: ${_currentPosition?.latitude.toStringAsFixed(4)}, ${_currentPosition?.longitude.toStringAsFixed(4)}',
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
                   ),
-                ),
-              // Debug info overlay
-              if (!kDebugMode)
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    color: Colors.black54,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            'User Pos: ${_currentPosition?.latitude.toStringAsFixed(4)}, ${_currentPosition?.longitude.toStringAsFixed(4)}',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 10)),
-                        Text('Marker: ${_userMarker != null ? "Yes" : "No"}',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 10)),
-                        Text('Path Points: ${_pathPoints.length}',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 10)),
-                        Text('Route: ${_routePolyline != null ? "Yes" : "No"}',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 10)),
-                      ],
-                    ),
+                  Text(
+                    'Path Points: ${_pathPoints.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
                   ),
-                ),
-            ],
-          )
-        : const Center(child: CircularProgressIndicator());
+                  Text(
+                    'Route: ${_routePoints.isNotEmpty ? "Yes" : "No"}',
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

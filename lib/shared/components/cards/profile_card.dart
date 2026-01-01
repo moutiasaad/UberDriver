@@ -12,13 +12,15 @@ class ProfileOptionCard extends StatefulWidget {
   final String icon;
   final Function pressed;
   final int withForword;
+  final Widget? trailing;
 
   const ProfileOptionCard(
       {super.key,
       required this.text,
       required this.icon,
       required this.pressed,
-      this.withForword = 0});
+      this.withForword = 0,
+      this.trailing});
 
   @override
   State<ProfileOptionCard> createState() => _ProfileOptionCardState();
@@ -50,6 +52,10 @@ class _ProfileOptionCardState extends State<ProfileOptionCard> {
                 text: context.translate(widget.text),
                 style: AppTextStyle.mediumBlack14),
             const Spacer(),
+            if (widget.trailing != null) ...[
+              widget.trailing!,
+              const SizedBox(width: 8),
+            ],
             widget.withForword == 0
                 ? Icon(
                     Icons.arrow_forward_ios,
@@ -62,9 +68,14 @@ class _ProfileOptionCardState extends State<ProfileOptionCard> {
                       setState(() {
                         notification = value;
                       });
-
             })
-                    : SizedBox()
+                    : widget.withForword == 3
+                        ? Icon(
+                            Icons.arrow_forward_ios,
+                            color: BorderColor.grey,
+                            size: 18,
+                          )
+                        : SizedBox()
           ],
         ),
       ),

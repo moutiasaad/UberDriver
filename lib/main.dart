@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,13 +7,24 @@ import 'package:uber_driver/shared/language/language_provider.dart';
 import 'package:uber_driver/shared/local/cash_helper.dart';
 import 'package:uber_driver/shared/local/secure_cash_helper.dart';
 import 'package:uber_driver/shared/remote/dio_helper.dart';
+import 'package:uber_driver/shared/remote/fcm_service.dart';
 import 'package:uber_driver/splash/splash_screen.dart';
 import 'package:uber_driver/utils/colors.dart';
 
 import 'config/provider_config.dart';
 
+// Global RouteObserver for detecting navigation changes
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
+  // Initialize FCM
+  await FcmService.init();
+
   DioHelper.init();
   await CashHelper.init();
   await SecureCashHelper.init();
@@ -35,6 +47,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
+      navigatorObservers: [routeObserver],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -43,7 +56,8 @@ class MyApp extends StatelessWidget {
       ],
       locale: languageProvider.locale,
       supportedLocales: const [
-        Locale('ar'), // English
+        Locale('ar'), // Arabic
+        Locale('en'), // English
       ],
 
 

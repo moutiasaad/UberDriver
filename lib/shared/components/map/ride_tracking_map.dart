@@ -1,13 +1,10 @@
-import 'dart:async';
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../utils/app_images.dart';
 import '../../../utils/app_text_styles.dart';
 import '../../../utils/colors.dart';
 import '../buttons/default_button.dart';
@@ -42,131 +39,99 @@ class RideTrackingMap extends StatefulWidget {
   final bool showNavigateButton;
   final bool showPolylines;
   final double zoom;
-  final Function(GoogleMapController)? onMapCreated;
+  final Function(MapController)? onMapCreated;
 
   @override
   State<RideTrackingMap> createState() => _RideTrackingMapState();
 }
 
 class _RideTrackingMapState extends State<RideTrackingMap> {
-  GoogleMapController? _mapController;
-  BitmapDescriptor? _pickupIcon;
-  BitmapDescriptor? _dropoffIcon;
-  BitmapDescriptor? _driverIcon;
-  bool _iconsLoaded = false;
-  Set<Polyline> _polylines = {};
+  final MapController _mapController = MapController();
+  List<LatLng> _routePoints = [];
+  bool _isLoadingRoute = false;
 
   @override
   void initState() {
     super.initState();
-    _loadIcons();
+    if (widget.showPolylines) {
+      _fetchRoute();
+    }
   }
 
   @override
   void didUpdateWidget(RideTrackingMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update polylines if driver location changed
     if (oldWidget.driverLatitude != widget.driverLatitude ||
         oldWidget.driverLongitude != widget.driverLongitude) {
-      _buildPolylines();
-      _animateToBounds();
+      if (widget.showPolylines) {
+        _fetchRoute();
+      }
+      _fitBounds();
     }
   }
 
-  Future<void> _loadIcons() async {
+  /// Fetch route from OSRM (free routing service)
+  Future<void> _fetchRoute() async {
+    if (_isLoadingRoute) return;
+
+    setState(() => _isLoadingRoute = true);
+
     try {
-      _pickupIcon = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(size: Size(48, 48)),
-        AppImages.shopMarker,
-      );
-      _dropoffIcon = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(size: Size(48, 48)),
-        AppImages.customerMarker,
-      );
-      // Use default blue marker for driver
-      _driverIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+      final List<LatLng> waypoints = [];
+
+      // Add driver location if available
+      if (widget.driverLatitude != null && widget.driverLongitude != null) {
+        waypoints.add(LatLng(widget.driverLatitude!, widget.driverLongitude!));
+      }
+
+      // Add pickup
+      waypoints.add(LatLng(widget.pickupLatitude, widget.pickupLongitude));
+
+      // Add dropoff
+      waypoints.add(LatLng(widget.dropoffLatitude, widget.dropoffLongitude));
+
+      if (waypoints.length < 2) {
+        setState(() => _isLoadingRoute = false);
+        return;
+      }
+
+      // Build OSRM URL
+      final coordinates = waypoints
+          .map((p) => '${p.longitude},${p.latitude}')
+          .join(';');
+
+      final url = 'https://router.project-osrm.org/route/v1/driving/$coordinates?overview=full&geometries=geojson';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['routes'] != null && data['routes'].isNotEmpty) {
+          final coords = data['routes'][0]['geometry']['coordinates'] as List;
+          _routePoints = coords
+              .map<LatLng>((c) => LatLng(c[1].toDouble(), c[0].toDouble()))
+              .toList();
+        }
+      }
     } catch (e) {
-      // Use default markers if custom icons fail
-      _pickupIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
-      _dropoffIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-      _driverIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+      // Fallback to straight line if OSRM fails
+      _routePoints = _buildStraightLine();
     }
 
-    setState(() {
-      _iconsLoaded = true;
-    });
-
-    _buildPolylines();
+    setState(() => _isLoadingRoute = false);
   }
 
-  void _buildPolylines() {
-    if (!widget.showPolylines) {
-      _polylines = {};
-      return;
-    }
-
+  List<LatLng> _buildStraightLine() {
     final List<LatLng> points = [];
 
-    // Add driver location if available
     if (widget.driverLatitude != null && widget.driverLongitude != null) {
       points.add(LatLng(widget.driverLatitude!, widget.driverLongitude!));
     }
 
-    // Add pickup location
     points.add(LatLng(widget.pickupLatitude, widget.pickupLongitude));
-
-    // Add dropoff location
     points.add(LatLng(widget.dropoffLatitude, widget.dropoffLongitude));
 
-    _polylines = {
-      Polyline(
-        polylineId: const PolylineId('route'),
-        points: points,
-        color: AppColors.primary,
-        width: 4,
-        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-      ),
-    };
-
-    setState(() {});
-  }
-
-  Set<Marker> _buildMarkers() {
-    final markers = <Marker>{};
-
-    // Pickup marker
-    markers.add(
-      Marker(
-        markerId: const MarkerId('pickup'),
-        position: LatLng(widget.pickupLatitude, widget.pickupLongitude),
-        icon: _pickupIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        infoWindow: InfoWindow(title: widget.pickupLabel),
-      ),
-    );
-
-    // Dropoff marker
-    markers.add(
-      Marker(
-        markerId: const MarkerId('dropoff'),
-        position: LatLng(widget.dropoffLatitude, widget.dropoffLongitude),
-        icon: _dropoffIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: InfoWindow(title: widget.dropoffLabel),
-      ),
-    );
-
-    // Driver marker (if location available)
-    if (widget.driverLatitude != null && widget.driverLongitude != null) {
-      markers.add(
-        Marker(
-          markerId: const MarkerId('driver'),
-          position: LatLng(widget.driverLatitude!, widget.driverLongitude!),
-          icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: InfoWindow(title: widget.driverLabel),
-        ),
-      );
-    }
-
-    return markers;
+    return points;
   }
 
   LatLng _calculateCenter() {
@@ -184,17 +149,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
     return LatLng(avgLat, avgLng);
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    widget.onMapCreated?.call(controller);
-
-    // Animate to show all markers
-    _animateToBounds();
-  }
-
-  void _animateToBounds() {
-    if (_mapController == null) return;
-
+  void _fitBounds() {
     final List<LatLng> points = [
       LatLng(widget.pickupLatitude, widget.pickupLongitude),
       LatLng(widget.dropoffLatitude, widget.dropoffLongitude),
@@ -206,20 +161,16 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
 
     if (points.length < 2) return;
 
-    double minLat = points.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
-    double maxLat = points.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
-    double minLng = points.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
-    double maxLng = points.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
-
-    final bounds = LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-
-    if (!Platform.isIOS) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
-      });
+    try {
+      final bounds = LatLngBounds.fromPoints(points);
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(50),
+        ),
+      );
+    } catch (e) {
+      // Ignore if map not ready
     }
   }
 
@@ -229,7 +180,6 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
 
     String url;
     if (widget.driverLatitude != null && widget.driverLongitude != null) {
-      // Include waypoint for pickup
       final pickup = '${widget.pickupLatitude},${widget.pickupLongitude}';
       final dropoff = '${widget.dropoffLatitude},${widget.dropoffLongitude}';
       url = 'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=$dropoff&waypoints=$pickup&travelmode=driving';
@@ -242,30 +192,138 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!_iconsLoaded) {
-      return const Center(child: CircularProgressIndicator());
+  List<Marker> _buildMarkers() {
+    final markers = <Marker>[];
+
+    // Pickup marker (green)
+    markers.add(
+      Marker(
+        point: LatLng(widget.pickupLatitude, widget.pickupLongitude),
+        width: 40,
+        height: 40,
+        child: Tooltip(
+          message: widget.pickupLabel,
+          child: const Icon(
+            Icons.radio_button_checked,
+            color: Colors.green,
+            size: 32,
+          ),
+        ),
+      ),
+    );
+
+    // Dropoff marker (red)
+    markers.add(
+      Marker(
+        point: LatLng(widget.dropoffLatitude, widget.dropoffLongitude),
+        width: 40,
+        height: 40,
+        child: Tooltip(
+          message: widget.dropoffLabel,
+          child: const Icon(
+            Icons.location_on,
+            color: Colors.red,
+            size: 36,
+          ),
+        ),
+      ),
+    );
+
+    // Driver marker (blue)
+    if (widget.driverLatitude != null && widget.driverLongitude != null) {
+      markers.add(
+        Marker(
+          point: LatLng(widget.driverLatitude!, widget.driverLongitude!),
+          width: 40,
+          height: 40,
+          child: Tooltip(
+            message: widget.driverLabel,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.directions_car,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
+    return markers;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Stack(
       children: [
-        GoogleMap(
-          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-            Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
-          },
-          mapType: MapType.normal,
-          markers: _buildMarkers(),
-          polylines: _polylines,
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: CameraPosition(
-            target: _calculateCenter(),
-            zoom: widget.zoom,
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _calculateCenter(),
+            initialZoom: widget.zoom,
+            onMapReady: () {
+              widget.onMapCreated?.call(_mapController);
+              Future.delayed(const Duration(milliseconds: 300), _fitBounds);
+            },
           ),
-          myLocationEnabled: false,
-          myLocationButtonEnabled: false,
-          zoomControlsEnabled: false,
+          children: [
+            // OpenStreetMap tile layer (free, no API key needed)
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.uber_driver',
+            ),
+            // Route polyline
+            if (widget.showPolylines && _routePoints.isNotEmpty)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: _routePoints,
+                    color: AppColors.primary,
+                    strokeWidth: 4,
+                  ),
+                ],
+              ),
+            // Fallback straight line while loading
+            if (widget.showPolylines && _routePoints.isEmpty && !_isLoadingRoute)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: _buildStraightLine(),
+                    color: AppColors.primary.withOpacity(0.5),
+                    strokeWidth: 3,
+                    pattern: const StrokePattern.dotted(),
+                  ),
+                ],
+              ),
+            // Markers
+            MarkerLayer(markers: _buildMarkers()),
+          ],
         ),
+        // Loading indicator for route
+        if (_isLoadingRoute)
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+        // Navigate button
         if (widget.showNavigateButton)
           Positioned(
             top: 10,
@@ -281,11 +339,5 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
           ),
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
   }
 }

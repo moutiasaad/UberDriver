@@ -32,7 +32,14 @@
     "topDemandProducts": "أكثر المنتجات طلباً",
     "deliveredAt": "توصيل الى",
     "search": "أبحث عن اسم منتج او محل..",
-    "allProducts": "جميع المنتجات"
+    "allProducts": "جميع المنتجات",
+    "online": "متصل",
+    "offline": "غير متصل",
+    "goOnline": "اذهب متصل",
+    "goOffline": "اذهب غير متصل",
+    "availableRides": "الرحلات المتاحة",
+    "noRidesAvailable": "لا توجد رحلات متاحة",
+    "newRideRequest": "طلب رحلة جديد"
   },
   "createDesign": {
     "makeDesign": "صمم هديتك بنفسك",
@@ -190,7 +197,17 @@
     "privacy": "سياسة الخصوصية والاستخدم",
     "logout": "تسجيل الخروج",
     "notification": "تلقي الاشعارات",
-    "deleteAccount": "حذف الحساب"
+    "deleteAccount": "حذف الحساب",
+    "language": "اللغة",
+    "arabic": "العربية",
+    "english": "الإنجليزية",
+    "updateProfile": "تحديث الملف الشخصي",
+    "updatePhone": "تحديث رقم الهاتف",
+    "currentBalance": "الرصيد الحالي",
+    "totalEarnings": "إجمالي الأرباح",
+    "withdraw": "سحب",
+    "transactions": "المعاملات",
+    "noTransactions": "لا توجد معاملات بعد"
   },
   "ride": {
     "pickup": "نقطة الانطلاق",
@@ -200,7 +217,13 @@
     "fare": "الأجرة",
     "paymentMethod": "طريقة الدفع",
     "cash": "نقدي",
-    "card": "بطاقة"
+    "card": "بطاقة",
+    "km": "كم",
+    "min": "دقيقة",
+    "accept": "قبول",
+    "decline": "رفض",
+    "rideRequest": "طلب رحلة",
+    "expiresIn": "ينتهي في"
   },
   "rideDetail": {
     "title": "تفاصيل الرحلة",
@@ -288,6 +311,72 @@
     "rate": "ارسال التقييم",
     "filter": "تصفية",
     "change": "تغيير",
-    "updateOrder": " تحديث الحالة"
+    "updateOrder": " تحديث الحالة",
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "common": {
+    "retry": "إعادة المحاولة",
+    "loading": "جار التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "warning": "تحذير",
+    "info": "معلومات",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "done": "تم",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "search": "بحث",
+    "noData": "لا توجد بيانات",
+    "refresh": "تحديث",
+    "settings": "الإعدادات",
+    "help": "المساعدة",
+    "about": "حول",
+    "version": "الإصدار",
+    "sar": "ر.س"
+  },
+  "wallet": {
+    "title": "المحفظة",
+    "balance": "الرصيد",
+    "withdraw": "سحب",
+    "withdrawAmount": "مبلغ السحب",
+    "enterAmount": "أدخل المبلغ",
+    "availableBalance": "الرصيد المتاح",
+    "transactions": "المعاملات",
+    "noTransactions": "لا توجد معاملات بعد",
+    "earnings": "الأرباح",
+    "pending": "قيد الانتظار",
+    "completed": "مكتمل"
+  },
+  "notification": {
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات",
+    "newRide": "رحلة جديدة",
+    "rideAccepted": "تم قبول الرحلة",
+    "rideCancelled": "تم إلغاء الرحلة",
+    "rideCompleted": "تم إكمال الرحلة",
+    "payment": "الدفع",
+    "system": "النظام"
+  },
+  "status": {
+    "pending": "قيد الانتظار",
+    "accepted": "مقبول",
+    "arrived": "وصل",
+    "inProgress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "cancelled": "ملغي",
+    "online": "متصل",
+    "offline": "غير متصل"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "invalidEmail": "البريد الإلكتروني غير صحيح",
+    "invalidPhone": "رقم الهاتف غير صحيح",
+    "minLength": "الحد الأدنى {0} أحرف",
+    "maxLength": "الحد الأقصى {0} أحرف",
+    "invalidAmount": "المبلغ غير صحيح"
   }
 }

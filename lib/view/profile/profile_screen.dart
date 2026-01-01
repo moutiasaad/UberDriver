@@ -1,10 +1,9 @@
 import 'dart:io';
 
-
 import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
 import 'package:uber_driver/shared/language/extension.dart';
+import 'package:uber_driver/shared/language/language_provider.dart';
 import 'package:uber_driver/view/profile/profile_detail_screen.dart';
 import 'package:uber_driver/view/profile/rules_screen.dart';
 import 'package:uber_driver/view/profile/wallet_screen.dart';
@@ -158,6 +157,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: BorderColor.grey,
                       margin: EdgeInsets.symmetric(vertical: 8),
                     ),
+                    // Language Selection
+                    Consumer<LanguageProvider>(
+                      builder: (context, languageProvider, child) {
+                        return ProfileOptionCard(
+                          withForword: 3,
+                          pressed: () {
+                            _showLanguageDialog(context, languageProvider);
+                          },
+                          text: 'profile.language',
+                          icon: AppIcons.privacyP,
+                          trailing: Text(
+                            languageProvider.isArabic
+                                ? context.translate('profile.arabic')
+                                : context.translate('profile.english'),
+                            style: AppTextStyle.regularBlack4_14,
+                          ),
+                        );
+                      },
+                    ),
+                    Container(
+                      height: 1,
+                      color: BorderColor.grey,
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                    ),
                     ProfileOptionCard(
                       withForword: 2,
                       pressed: () async {
@@ -186,54 +209,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-// getPersonalInfo() async {
-//   try {
-//     List<String>? info = await CashHelper.getData(key: 'personalInfo');
-//     int memberId = int.parse(info![0]);
-//     String token = '';
-//     await CashHelper.getDataString(key: 'token').then((value) {
-//       if (value != null) {
-//         token = value;
-//       }
-//     });
-//     print(token);
-//
-//     final response = await DioHelper.getData(url: 'api/members', query: {
-//       'id': memberId,
-//     }, header: {
-//       'Authorization': 'Bearer $token',
-//     }); // Replace with your API endpoint
-//     print(response.data['data'][0]);
-//     if (response.statusCode == 200) {
-//       final Map<String, dynamic> data = response.data['data'][0];
-//       print(data['firstname'] + ' ' + data['lastname']);
-//       print(data['followers']);
-//       setState(() {
-//         userName = data['firstname'] + ' ' + data['lastname'];
-//         followers = '${data['followers']}';
-//         // trades = data['trades'];
-//         image = data['image'] ?? '';
-//       });
-//     } else {
-//       throw Exception('Failed to load data');
-//     }
-//   } catch (error) {
-//     print(error);
-//     if (error is DioException &&
-//         (error.type == DioExceptionType.connectionTimeout ||
-//             error.type == DioExceptionType.connectionError)) {
-//       // Handle connection timeout error
-//       return Future.error('connection timeout');
-//     } else if (error is DioException) {
-//       return Future.error('connection other');
-//     }
-//
-//     // print(error.response);
-//     // print('Error message: ${error.error}');
-//     // print('Error description: ${error.message}');
-//     else {
-//       return Future.error('connection other');
-//     }
-//   }
-// }
+  void _showLanguageDialog(BuildContext context, LanguageProvider languageProvider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(context.translate('profile.language')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  languageProvider.isArabic
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: AppColors.primary,
+                ),
+                title: Text(context.translate('profile.arabic')),
+                onTap: () {
+                  languageProvider.setArabic();
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  languageProvider.isEnglish
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: AppColors.primary,
+                ),
+                title: Text(context.translate('profile.english')),
+                onTap: () {
+                  languageProvider.setEnglish();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(context.translate('buttons.cancel')),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

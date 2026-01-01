@@ -8,51 +8,63 @@ import '../../logique_function/date_functions.dart';
 import '../image/svg_icon.dart';
 import '../text/CText.dart';
 
-class NotificationCard extends StatefulWidget {
-  const NotificationCard({super.key, required this.notification});
+class NotificationCard extends StatelessWidget {
+  const NotificationCard({
+    super.key,
+    required this.notification,
+    this.onTap,
+  });
 
   final NotificationModel notification;
+  final VoidCallback? onTap;
 
-  @override
-  State<NotificationCard> createState() => _NotificationCardState();
-}
-
-class _NotificationCardState extends State<NotificationCard> {
   @override
   Widget build(BuildContext context) {
+    final bool isRead = notification.isRead ?? false;
+
     return InkWell(
       borderRadius: BorderRadius.circular(4),
-      onTap: () {
-        // setState(() {
-        //   if (!widget.isRead) {
-        //     setState(() {
-        //       widget.isRead = true;
-        //     });
-        //   } else {
-        //     return;
-        //   }
-        // });
-      },
+      onTap: onTap,
       child: Container(
         width: double.infinity,
-        color:
-            BackgroundColor.background,
+        color: isRead ? BackgroundColor.background : BackgroundColor.background.withOpacity(0.95),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-                height: 40,
-                width: 40,
-                padding: const EdgeInsets.all(8),
-                decoration:  BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.notification.type == 'orders' ?
-                  AppColors.primary:BackgroundColor.red2,
-                ),
-                child:  SvgIcon(icon:
-                widget.notification.type == 'orders' ?
-                AppIcons.notificationType1 : AppIcons.notificationType2)),
+            Stack(
+              children: [
+                Container(
+                    height: 40,
+                    width: 40,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: notification.type == 'orders'
+                          ? AppColors.primary
+                          : BackgroundColor.red2,
+                    ),
+                    child: SvgIcon(
+                        icon: notification.type == 'orders'
+                            ? AppIcons.notificationType1
+                            : AppIcons.notificationType2)),
+                // Unread indicator dot
+                if (!isRead)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      height: 10,
+                      width: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(
               width: 12,
             ),
@@ -62,15 +74,21 @@ class _NotificationCardState extends State<NotificationCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   cText(
-                      text: widget.notification.title??'',
-                      style: AppTextStyle.semiBoldBlack14),
+                      text: notification.title ?? '',
+                      style: isRead
+                          ? AppTextStyle.regularBlack4_14
+                          : AppTextStyle.semiBoldBlack14),
                   cText(
-                      text: widget.notification.body??'',
+                      text: notification.body ?? '',
                       style: AppTextStyle.regularBlack4_14)
                 ],
               ),
             ),
-            cText(text:widget.notification.date != null ?convertToArabicDate(widget.notification.date!) :'', style: AppTextStyle.regularBlack4_12)
+            cText(
+                text: notification.date != null
+                    ? convertToArabicDate(notification.date!)
+                    : '',
+                style: AppTextStyle.regularBlack4_12)
           ],
         ),
       ),
