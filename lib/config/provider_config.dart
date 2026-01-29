@@ -2,6 +2,7 @@
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:uber_driver/providers/LocationProvider.dart';
+import 'package:uber_driver/providers/driver_provider.dart';
 import 'package:uber_driver/providers/merchant_provider.dart';
 import 'package:uber_driver/providers/notification_provider.dart';
 import 'package:uber_driver/providers/order_provider.dart';
@@ -17,6 +18,9 @@ class ProviderConfig {
     ),
     ChangeNotifierProvider<RegisterProvider>(
       create: (_) => RegisterProvider(),
+    ),
+    ChangeNotifierProvider<DriverProvider>(
+      create: (_) => DriverProvider(),
     ),
     ChangeNotifierProvider<OrderProvider>(
       create: (_) => OrderProvider(),

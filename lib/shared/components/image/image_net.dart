@@ -62,7 +62,10 @@ class _ImageNetState extends State<ImageNet> {
   Widget build(BuildContext context) {
     // ✅ Check for empty or invalid URL safely
     if (!_isValidUrl) {
-      debugPrint('⚠️ Invalid image URL: "${widget.imageUrl}"');
+      // Only print debug message for non-empty invalid URLs
+      if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
+        debugPrint('⚠️ Invalid image URL: "${widget.imageUrl}"');
+      }
       return _buildPlaceholder();
     }
 

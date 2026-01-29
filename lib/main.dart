@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:uber_driver/firebase_options.dart';
 import 'package:uber_driver/shared/language/app_localizations.dart';
 import 'package:uber_driver/shared/language/language_provider.dart';
 import 'package:uber_driver/shared/local/cash_helper.dart';
@@ -20,7 +21,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Initialize FCM
   await FcmService.init();

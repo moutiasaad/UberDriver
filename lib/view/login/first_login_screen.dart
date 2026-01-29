@@ -63,7 +63,7 @@ class _FirstLoginScreenState extends State<FirstLoginScreen> {
               children: [
                 Center(
                   child: Image.asset(
-                    AppImages.appLogo,
+                    'assets/tshl_tawsil_captin_icon.png',
                     width: 145,
                     height: 190,
                     fit: BoxFit.cover,

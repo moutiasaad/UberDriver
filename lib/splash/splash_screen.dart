@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
-
+import 'package:provider/provider.dart';
+import '../providers/driver_provider.dart';
 import '../shared/local/secure_cash_helper.dart';
 import '../view/layout/driver_home_layout.dart';
 import '../view/login/login_layout.dart';
@@ -20,6 +20,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (token.isEmpty) {
       return const LoginLayout();
     } else {
+      // Call go-online API when token exists
+      final driverProvider = Provider.of<DriverProvider>(context, listen: false);
+      await driverProvider.goOnline();
       return DriverHomeLayout();
     }
   }

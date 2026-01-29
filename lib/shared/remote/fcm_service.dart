@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'dio_helper.dart';
@@ -24,7 +25,36 @@ class FcmService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Get FCM token
+
+        // For iOS, try to get APNS token first (not available on simulator)
+        if (Platform.isIOS) {
+          try {
+            debugPrint('FCM: Attempting to get APNS token...');
+            String? apnsToken = await _messaging.getAPNSToken();
+            if (apnsToken != null) {
+              debugPrint('FCM: ✅ APNS token obtained: ${apnsToken.substring(0, 20)}...');
+            } else {
+              debugPrint('FCM: APNS token not available yet, waiting...');
+              // Wait a bit for APNS token to be available
+              await Future.delayed(const Duration(seconds: 3));
+              apnsToken = await _messaging.getAPNSToken();
+              if (apnsToken != null) {
+                debugPrint('FCM: ✅ APNS token obtained after delay: ${apnsToken.substring(0, 20)}...');
+              } else {
+                debugPrint('FCM: ⚠️ APNS token not available (running on simulator?)');
+                debugPrint('FCM: Push notifications will not work on iOS simulator');
+                // Don't try to get FCM token on iOS without APNS token
+                return;
+              }
+            }
+          } catch (e) {
+            debugPrint('FCM: ⚠️ Error getting APNS token: $e');
+            debugPrint('FCM: This is normal on iOS simulator. Push notifications require a real device.');
+            return;
+          }
+        }
+
+        // Get FCM token (only if we have APNS token on iOS, or if on Android)
         await _getToken();
 
         // Listen for token refresh
@@ -64,13 +94,23 @@ class FcmService {
 
   /// Send FCM token to server
   static Future<bool> sendTokenToServer() async {
+    // On iOS simulator, token won't be available
+    if (Platform.isIOS) {
+      String? apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken == null) {
+        debugPrint('FCM: ⚠️ Cannot send token - APNS token not available (iOS simulator?)');
+        debugPrint('FCM: Skipping FCM token send. Use a real iOS device for push notifications.');
+        return true; // Return true to not block the flow
+      }
+    }
+
     if (_fcmToken == null) {
       await _getToken();
     }
 
     if (_fcmToken == null) {
-      debugPrint('FCM: No token available to send');
-      return false;
+      debugPrint('FCM: ⚠️ No token available to send');
+      return true; // Return true to not block the flow on simulator
     }
 
     try {
@@ -81,11 +121,11 @@ class FcmService {
         },
       );
 
-      debugPrint('FCM: Token sent to server successfully');
+      debugPrint('FCM: ✅ Token sent to server successfully');
       debugPrint('FCM: Server response: ${response.data}');
       return response.data['success'] == true;
     } catch (e) {
-      debugPrint('FCM: Error sending token to server: $e');
+      debugPrint('FCM: ❌ Error sending token to server: $e');
       return false;
     }
   }
