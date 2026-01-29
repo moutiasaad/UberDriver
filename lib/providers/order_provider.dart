@@ -294,6 +294,101 @@ class OrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ============== RIDE STATUS UPDATE STATE ==============
+  bool _updateRideStatusLoading = false;
+  bool get updateRideStatusLoading => _updateRideStatusLoading;
+
+  /// Update Ride Status
+  /// PUT /driver/rides/{id}/status
+  /// Body: {"status": "driver_arrived" | "in_progress" | "completed"}
+  /// Response: {"success": true, "message": "...", "data": {...}}
+  Future<RideModel?> updateRideStatus({
+    required BuildContext context,
+    required int rideId,
+    required String status,
+  }) async {
+    _updateRideStatusLoading = true;
+    notifyListeners();
+
+    // Debug: Print request details
+    print('═══════════════════════════════════════════════════════════');
+    print('UPDATE RIDE STATUS REQUEST:');
+    print('URL: driver/rides/$rideId/status');
+    print('METHOD: PUT');
+    print('BODY: {status: $status}');
+    print('═══════════════════════════════════════════════════════════');
+
+    try {
+      final response = await DioHelper.putData(
+        url: 'driver/rides/$rideId/status',
+        data: {'status': status},
+      );
+
+      _updateRideStatusLoading = false;
+      final responseData = response.data;
+
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final rideData = responseData['data'] as Map<String, dynamic>;
+        _activeRide = RideModel.fromJson(rideData);
+
+        String successMessage;
+        switch (status) {
+          case 'arrived':
+            successMessage = _safeTranslate(context, 'successMessage.arrivedAtPickup', 'تم تأكيد الوصول لنقطة الانطلاق');
+            break;
+          case 'started':
+            successMessage = _safeTranslate(context, 'successMessage.startRide', 'تم بدء الرحلة');
+            break;
+          case 'completed':
+            successMessage = _safeTranslate(context, 'successMessage.completeRide', 'تم إنهاء الرحلة بنجاح');
+            break;
+          default:
+            successMessage = _safeTranslate(context, 'successMessage.updateStatus', 'تم تحديث الحالة');
+        }
+
+        ShowSuccesSnackBar(context, successMessage);
+        notifyListeners();
+        return _activeRide;
+      } else {
+        ShowErrorSnackBar(
+          context,
+          responseData['message'] ?? _safeTranslate(context, 'errorsMessage.updateStatus', 'حدث خطأ أثناء تحديث الحالة'),
+        );
+        notifyListeners();
+        return null;
+      }
+    } on DioException catch (error) {
+      _updateRideStatusLoading = false;
+
+      String errorMessage;
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout ||
+          error.type == DioExceptionType.connectionError) {
+        errorMessage = _safeTranslate(context, 'errorsMessage.connection', 'مشكلة في الاتصال');
+      } else if (error.response?.data != null &&
+          error.response!.data is Map<String, dynamic>) {
+        errorMessage = error.response!.data['message'] ??
+            _safeTranslate(context, 'errorsMessage.updateStatus', 'حدث خطأ أثناء تحديث الحالة');
+      } else {
+        errorMessage = _safeTranslate(context, 'errorsMessage.updateStatus', 'حدث خطأ أثناء تحديث الحالة');
+      }
+
+      ShowErrorSnackBar(context, errorMessage);
+      notifyListeners();
+      return null;
+    } catch (error) {
+      _updateRideStatusLoading = false;
+      print('Update ride status error: $error');
+      ShowErrorSnackBar(
+        context,
+        _safeTranslate(context, 'errorsMessage.updateStatus', 'حدث خطأ أثناء تحديث الحالة'),
+      );
+      notifyListeners();
+      return null;
+    }
+  }
+
   // ============== RIDE HISTORY METHODS ==============
 
   /// Get Ride History

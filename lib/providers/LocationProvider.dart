@@ -101,7 +101,7 @@ class LocationProvider extends ChangeNotifier {
 
   /* --------------------------------------------------------------------------
    * Update Driver Location
-   * POST /driver/location
+   * PUT /driver/location
    * Body: {"latitude": 24.7136, "longitude": 46.6753}
    * Response: {"success": true, "message": "Location updated"}
    * ------------------------------------------------------------------------*/
@@ -115,7 +115,7 @@ class LocationProvider extends ChangeNotifier {
       _driverLatitude = pos.latitude;
       _driverLongitude = pos.longitude;
 
-      final response = await DioHelper.postData(
+      final response = await DioHelper.putData(
         url: 'driver/location',
         data: {
           'latitude': pos.latitude,

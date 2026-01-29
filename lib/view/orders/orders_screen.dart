@@ -7,6 +7,7 @@ import '../../shared/components/text/CText.dart';
 import '../../shared/error/error_component.dart';
 import '../../utils/app_text_styles.dart';
 import '../../utils/colors.dart';
+import 'active_ride.dart';
 
 // Hardcoded Arabic strings for orders screen
 class _OrdersStrings {
@@ -153,7 +154,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     }
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _RideHistoryCard(ride: rides[index]),
+                      child: GestureDetector(
+                        onTap: () => _showRideDetails(context, rides[index]),
+                        child: _RideHistoryCard(ride: rides[index]),
+                      ),
                     );
                   },
                 ),
@@ -162,6 +166,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showRideDetails(BuildContext context, RideModel ride) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActiveRideScreen(ride: ride),
+      ),
     );
   }
 
@@ -400,5 +413,376 @@ class _RideHistoryCard extends StatelessWidget {
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+// Bottom sheet for ride details
+class _RideDetailBottomSheet extends StatelessWidget {
+  final RideModel ride;
+
+  const _RideDetailBottomSheet({required this.ride});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'تفاصيل الرحلة #${ride.id}',
+                  style: AppTextStyle.semiBoldBlack18,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Status
+                  _buildSection(
+                    title: 'الحالة',
+                    child: _buildStatusBadge(ride.status),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Customer Info
+                  _buildSection(
+                    title: 'معلومات العميل',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.person, size: 20, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(ride.customer.name, style: AppTextStyle.mediumBlack14),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone, size: 20, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(ride.customer.phone, style: AppTextStyle.regularBlack1_14),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Locations
+                  _buildSection(
+                    title: 'المواقع',
+                    child: Column(
+                      children: [
+                        // Pickup
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.circle, size: 12, color: AppColors.success),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_OrdersStrings.from, style: AppTextStyle.regularBlack1_12),
+                                  const SizedBox(height: 4),
+                                  Text(ride.pickup.address, style: AppTextStyle.mediumBlack14),
+                                  if (ride.pickup.time != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(ride.pickup.time!, style: AppTextStyle.regularBlack1_12),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Connector
+                        Padding(
+                          padding: const EdgeInsets.only(left: 5, right: 5),
+                          child: Column(
+                            children: List.generate(
+                              3,
+                              (index) => Container(
+                                width: 2,
+                                height: 6,
+                                margin: const EdgeInsets.symmetric(vertical: 2),
+                                color: Colors.grey[300],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Dropoff
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.location_on, size: 14, color: AppColors.error),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_OrdersStrings.to, style: AppTextStyle.regularBlack1_12),
+                                  const SizedBox(height: 4),
+                                  Text(ride.dropoff.address, style: AppTextStyle.mediumBlack14),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Fare Details
+                  _buildSection(
+                    title: 'تفاصيل الأجرة',
+                    child: Column(
+                      children: [
+                        _buildFareRow('الأجرة الأساسية', ride.fare.baseFare),
+                        _buildFareRow('أجرة المسافة', ride.fare.distanceFare),
+                        if (ride.fare.discountAmount > 0)
+                          _buildFareRow('الخصم', -ride.fare.discountAmount, isDiscount: true),
+                        if (ride.fare.pointsDiscount > 0)
+                          _buildFareRow('خصم النقاط', -ride.fare.pointsDiscount, isDiscount: true),
+                        const Divider(),
+                        _buildFareRow('المجموع', ride.fare.finalAmount, isBold: true),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Trip Info
+                  _buildSection(
+                    title: 'معلومات الرحلة',
+                    child: Column(
+                      children: [
+                        _buildInfoRow('المسافة', '${ride.distanceKm.toStringAsFixed(1)} ${_OrdersStrings.km}'),
+                        _buildInfoRow('المدة المقدرة', '${ride.estimatedDurationMinutes} دقيقة'),
+                        if (ride.actualDurationMinutes != null)
+                          _buildInfoRow('المدة الفعلية', '${ride.actualDurationMinutes} دقيقة'),
+                        _buildInfoRow('طريقة الدفع', _getPaymentMethodText(ride.paymentMethod)),
+                        _buildInfoRow('حالة الدفع', _getPaymentStatusText(ride.paymentStatus)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Timestamps
+                  _buildSection(
+                    title: 'التوقيتات',
+                    child: Column(
+                      children: [
+                        if (ride.timestamps.createdAt != null)
+                          _buildTimestampRow('تاريخ الإنشاء', ride.timestamps.createdAt!),
+                        if (ride.timestamps.acceptedAt != null)
+                          _buildTimestampRow('تاريخ القبول', ride.timestamps.acceptedAt!),
+                        if (ride.timestamps.driverArrivedAt != null)
+                          _buildTimestampRow('وصول السائق', ride.timestamps.driverArrivedAt!),
+                        if (ride.timestamps.startedAt != null)
+                          _buildTimestampRow('بداية الرحلة', ride.timestamps.startedAt!),
+                        if (ride.timestamps.completedAt != null)
+                          _buildTimestampRow('انتهاء الرحلة', ride.timestamps.completedAt!),
+                        if (ride.timestamps.cancelledAt != null)
+                          _buildTimestampRow('تاريخ الإلغاء', ride.timestamps.cancelledAt!),
+                      ],
+                    ),
+                  ),
+
+                  // Cancellation Info (if cancelled)
+                  if (ride.status.toLowerCase() == 'cancelled') ...[
+                    const SizedBox(height: 20),
+                    _buildSection(
+                      title: 'معلومات الإلغاء',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (ride.cancelledBy != null)
+                            _buildInfoRow('ملغي بواسطة', ride.cancelledBy!),
+                          if (ride.cancellationReason != null)
+                            _buildInfoRow('سبب الإلغاء', ride.cancellationReason!),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({required String title, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyle.semiBoldBlack14),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: BorderColor.grey1),
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusBadge(String? status) {
+    Color backgroundColor;
+    Color textColor;
+    String text;
+
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        backgroundColor = AppColors.success.withOpacity(0.1);
+        textColor = AppColors.success;
+        text = _OrdersStrings.completed;
+        break;
+      case 'cancelled':
+        backgroundColor = AppColors.error.withOpacity(0.1);
+        textColor = AppColors.error;
+        text = _OrdersStrings.cancelled;
+        break;
+      default:
+        backgroundColor = AppColors.warning.withOpacity(0.1);
+        textColor = AppColors.warning;
+        text = _OrdersStrings.inProgress;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFareRow(String label, double amount, {bool isBold = false, bool isDiscount = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: isBold ? AppTextStyle.semiBoldBlack14 : AppTextStyle.regularBlack1_14,
+          ),
+          Text(
+            '${isDiscount ? '-' : ''}${amount.abs().toStringAsFixed(2)}',
+            style: isBold
+                ? AppTextStyle.semiBoldBlack14.copyWith(color: AppColors.success)
+                : isDiscount
+                    ? AppTextStyle.regularBlack1_14.copyWith(color: AppColors.error)
+                    : AppTextStyle.regularBlack1_14,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyle.regularBlack1_14),
+          Text(value, style: AppTextStyle.mediumBlack14),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimestampRow(String label, DateTime date) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyle.regularBlack1_14),
+          Text(
+            '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
+            style: AppTextStyle.mediumBlack14,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getPaymentMethodText(String method) {
+    switch (method.toLowerCase()) {
+      case 'cash':
+        return 'نقدي';
+      case 'card':
+        return 'بطاقة';
+      case 'wallet':
+        return 'محفظة';
+      default:
+        return method;
+    }
+  }
+
+  String _getPaymentStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'قيد الانتظار';
+      case 'paid':
+        return 'مدفوع';
+      case 'failed':
+        return 'فشل';
+      default:
+        return status;
+    }
   }
 }

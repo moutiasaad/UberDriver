@@ -331,20 +331,22 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                               pressed: () => _openNavigation(),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Update status button
-                          Expanded(
-                            flex: 2,
-                            child: DefaultButton(
-                              raduis: 8,
-                              text: _getNextStatusButtonText(),
-                              pressed: () {
-                                // TODO: Implement status update
-                                _showStatusUpdateDialog(context);
-                              },
-                              activated: true,
+                          // Only show update status button if ride can be updated
+                          if (_canUpdateStatus()) ...[
+                            const SizedBox(width: 12),
+                            // Update status button
+                            Expanded(
+                              flex: 2,
+                              child: DefaultButton(
+                                raduis: 8,
+                                text: _getNextStatusButtonText(),
+                                pressed: () {
+                                  _showStatusUpdateDialog(context);
+                                },
+                                activated: true,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ],
@@ -453,6 +455,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     }
   }
 
+  /// Check if the ride status can be updated (not completed or cancelled)
+  bool _canUpdateStatus() {
+    final status = _currentRide.status.toLowerCase();
+    return status == 'accepted' ||
+           status == 'driver_arrived' ||
+           status == 'in_progress';
+  }
+
   String _getNextStatusButtonText() {
     switch (_currentRide.status.toLowerCase()) {
       case 'accepted':
@@ -466,75 +476,127 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     }
   }
 
+  /// Get the next status based on current ride status
+  /// API expects: 'arrived', 'started', 'completed'
+  String _getNextStatus() {
+    switch (_currentRide.status.toLowerCase()) {
+      case 'accepted':
+        return 'arrived';
+      case 'driver_arrived':
+        return 'started';
+      case 'in_progress':
+        return 'completed';
+      default:
+        return '';
+    }
+  }
+
   void _showStatusUpdateDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: BackgroundColor.background,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: BorderColor.grey,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      isDismissible: true,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final orderProvider = Provider.of<OrderProvider>(context);
+          final isLoading = orderProvider.updateRideStatusLoading;
+
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: BackgroundColor.background,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               ),
-              const SizedBox(height: 20),
-              cText(
-                text: _ActiveRideStrings.confirmStatus,
-                style: AppTextStyle.mediumBlack16,
-              ),
-              const SizedBox(height: 8),
-              cText(
-                text: _getStatusConfirmMessage(),
-                style: AppTextStyle.regularBlack1_14,
-              ),
-              const SizedBox(height: 24),
-              Row(
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: DefaultOutlinedButton(
-                      raduis: 8,
-                      text: _ActiveRideStrings.cancel,
-                      textStyle: AppTextStyle.semiBoldBlack14,
-                      pressed: () => Navigator.pop(context),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: BorderColor.grey,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DefaultButton(
-                      raduis: 8,
-                      text: _ActiveRideStrings.confirm,
-                      pressed: () {
-                        Navigator.pop(context);
-                        // Stop location tracking if ride is completed
-                        if (_currentRide.status.toLowerCase() == 'in_progress') {
-                          final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-                          locationProvider.stopDriverLocationTracking();
-                        }
-                        // TODO: Call API to update status
-                      },
-                      activated: true,
-                    ),
+                  const SizedBox(height: 20),
+                  cText(
+                    text: _ActiveRideStrings.confirmStatus,
+                    style: AppTextStyle.mediumBlack16,
+                  ),
+                  const SizedBox(height: 8),
+                  cText(
+                    text: _getStatusConfirmMessage(),
+                    style: AppTextStyle.regularBlack1_14,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DefaultOutlinedButton(
+                          raduis: 8,
+                          text: _ActiveRideStrings.cancel,
+                          textStyle: AppTextStyle.semiBoldBlack14,
+                          pressed: isLoading ? () {} : () => Navigator.pop(dialogContext),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DefaultButton(
+                          raduis: 8,
+                          text: isLoading ? '...' : _ActiveRideStrings.confirm,
+                          pressed: isLoading
+                              ? () {}
+                              : () async {
+                                  final nextStatus = _getNextStatus();
+                                  if (nextStatus.isEmpty) {
+                                    Navigator.pop(dialogContext);
+                                    return;
+                                  }
+
+                                  final updatedRide = await orderProvider.updateRideStatus(
+                                    context: context,
+                                    rideId: _currentRide.id,
+                                    status: nextStatus,
+                                  );
+
+                                  if (updatedRide != null) {
+                                    // Update local ride state
+                                    setState(() {
+                                      _currentRide = updatedRide;
+                                    });
+
+                                    // Close the dialog
+                                    if (dialogContext.mounted) {
+                                      Navigator.pop(dialogContext);
+                                    }
+
+                                    // Stop location tracking and go back if ride is completed
+                                    if (nextStatus == 'completed') {
+                                      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+                                      locationProvider.stopDriverLocationTracking();
+
+                                      // Navigate back after completing the ride
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+                                    }
+                                  }
+                                },
+                          activated: !isLoading,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

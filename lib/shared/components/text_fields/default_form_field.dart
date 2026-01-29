@@ -57,9 +57,9 @@ class _DefaultFormFieldState extends State<DefaultFormField> {
       onTapOutside: (event) {
         FocusManager.instance.primaryFocus!.unfocus();
       },
-      onChanged: (value) {
+      onChanged: widget.onChange != null ? (value) {
         widget.onChange!(value);
-      },
+      } : null,
       maxLines: widget.maxLines,
       textAlign: TextAlign.start,
       textAlignVertical: TextAlignVertical.center,
@@ -67,12 +67,12 @@ class _DefaultFormFieldState extends State<DefaultFormField> {
       cursorHeight: 20,
       controller: widget.contoller,
       keyboardType: widget.type,
-      validator: (String? value) {
+      validator: widget.validate != null ? (String? value) {
         return widget.validate!(value);
-      },
-      onTap: () {
+      } : null,
+      onTap: widget.tab != null ? () {
         widget.tab!();
-      },
+      } : null,
       style: AppTextStyle.regularBlack14,
       cursorColor: TextColor.primary,
       obscureText: widget.isPassword,

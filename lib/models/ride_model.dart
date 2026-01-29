@@ -39,21 +39,21 @@ class RideModel {
 
   factory RideModel.fromJson(Map<String, dynamic> json) {
     return RideModel(
-      id: json['id'] as int,
+      id: _parseInt(json['id']),
       pickup: PickupLocation.fromJson(json['pickup'] as Map<String, dynamic>),
       dropoff: DropoffLocation.fromJson(json['dropoff'] as Map<String, dynamic>),
       distanceKm: _parseDouble(json['distance_km']),
       estimatedDurationMinutes: _parseInt(json['estimated_duration_minutes']),
-      actualDurationMinutes: json['actual_duration_minutes'] as int?,
+      actualDurationMinutes: _parseNullableInt(json['actual_duration_minutes']),
       fare: FareModel.fromJson(json['fare'] as Map<String, dynamic>),
-      paymentMethod: json['payment_method'] as String? ?? 'cash',
-      paymentStatus: json['payment_status'] as String? ?? 'pending',
-      status: json['status'] as String? ?? 'pending',
-      statusText: json['status_text'] as String? ?? 'Pending',
-      statusColor: json['status_color'] as String? ?? 'warning',
+      paymentMethod: json['payment_method']?.toString() ?? 'cash',
+      paymentStatus: json['payment_status']?.toString() ?? 'pending',
+      status: json['status']?.toString() ?? 'pending',
+      statusText: json['status_text']?.toString() ?? 'Pending',
+      statusColor: json['status_color']?.toString() ?? 'warning',
       isCancellable: json['is_cancellable'] == true,
-      cancelledBy: json['cancelled_by'] as String?,
-      cancellationReason: json['cancellation_reason'] as String?,
+      cancelledBy: json['cancelled_by']?.toString(),
+      cancellationReason: json['cancellation_reason']?.toString(),
       timestamps: TimestampsModel.fromJson(json['timestamps'] as Map<String, dynamic>),
       customer: CustomerModel.fromJson(json['customer'] as Map<String, dynamic>),
     );
@@ -95,6 +95,14 @@ class RideModel {
     if (value is double) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
     return 0;
+  }
+
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 }
 

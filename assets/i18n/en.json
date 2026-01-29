@@ -8,6 +8,7 @@
     "codeSendIt": "Please enter the verification code sent to your email",
     "permissionCode": "You can request a new code after",
     "getNewCode": "Resend",
+    "resendOtp": "Resend OTP",
     "diNotGetCode": "Verification code will expire after",
     "whatName": "What is your name?",
     "name": "Name",

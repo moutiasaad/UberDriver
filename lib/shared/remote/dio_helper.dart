@@ -81,7 +81,8 @@ class DioHelper {
     };
     if (withToken) {
       final token = await SecureCashHelper.getToken();
-      if (token != null && token.isNotEmpty) {
+      print('DEBUG TOKEN: ${token.isNotEmpty ? "Token exists (${token.length} chars)" : "NO TOKEN"}');
+      if (token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
