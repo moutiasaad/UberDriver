@@ -42,7 +42,7 @@ class _UpdatePhoneScreenState extends State<UpdatePhoneScreen> {
         backgroundColor: Colors.white,
         appBar: AppBar(
             title:
-                cText(text: 'رقم الهاتف', style: AppTextStyle.semiBoldBlack18),
+                cText(text: context.translate('profile.phoneNumber'), style: AppTextStyle.semiBoldBlack18),
             centerTitle: false,
             elevation: 1,
             backgroundColor: Colors.white,
@@ -63,8 +63,7 @@ class _UpdatePhoneScreenState extends State<UpdatePhoneScreen> {
               spacing: 20,
               children: [
                 cText(
-                    text:
-                        'يمكنك القيام بتغيير رقم رقم الهاتف، لكن سيتم ارسال كود للتحقق من رقم هاتفك الجديد',
+                    text: context.translate('profile.phoneChangeDesc'),
                     style: AppTextStyle.mediumBlack3_14),
                 NumberField(
                   validate: (value) {

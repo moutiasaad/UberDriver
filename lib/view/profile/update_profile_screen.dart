@@ -44,7 +44,7 @@ class _UpdateNameScreenState extends State<UpdateNameScreen> {
         backgroundColor: Colors.white,
         appBar: AppBar(
             title: cText(
-                text: 'الاسم',
+                text: context.translate('profile.nameLabel'),
                 style: AppTextStyle.semiBoldBlack18),
             centerTitle: false,
             elevation: 1,
@@ -65,7 +65,7 @@ class _UpdateNameScreenState extends State<UpdateNameScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 20,
               children: [
-                cText(text: 'هذا الاسم الذي سيظهر عند قيامك باي طلب',
+                cText(text: context.translate('profile.nameDesc'),
                     style: AppTextStyle.mediumBlack3_14),
                 DefaultFormField(
                     contoller: fullNameController,

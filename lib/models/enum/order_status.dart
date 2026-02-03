@@ -15,22 +15,22 @@ enum OrderStatus {
   canceled,
   unknown;
 
-  /// Method to get the Arabic label for the status
-  String get label {
+  /// Method to get the translation key for the status
+  String get translationKey {
     switch (this) {
       case OrderStatus.awaitingReview:
-        return 'بانتظار المراجعة';
+        return 'orderStatus.awaitingReview';
       case OrderStatus.awaitingPayment:
-        return 'بانتظار الدفع';
+        return 'orderStatus.awaitingPayment';
       case OrderStatus.shipping:
-        return 'قيد الشحن';
+        return 'orderStatus.shipping';
       case OrderStatus.received:
-        return 'تم الاستلام';
+        return 'orderStatus.received';
       case OrderStatus.canceled:
-        return 'ملغاة';
+        return 'orderStatus.cancelled';
       case OrderStatus.unknown:
       default:
-        return 'غير معروف';
+        return 'orderStatus.unknown';
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uber_driver/shared/language/extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../utils/app_text_styles.dart';
@@ -145,7 +146,7 @@ class _MapScreenComponentState extends State<MapScreenComponent> {
               textStyle: AppTextStyle.mediumWhite12,
               width: 80,
               height: 28,
-              text: 'تتبع المسار',
+              text: context.translate('map.trackRoute'),
               pressed: () async {
                 String destination1 = '${widget.latitudeC},${widget.longitudeC}';
                 String url;

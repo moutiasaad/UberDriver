@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:uber_driver/shared/language/extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../utils/app_text_styles.dart';
@@ -340,7 +341,7 @@ class _MapTrackState extends State<MapTrack> {
               textStyle: AppTextStyle.mediumWhite12,
               width: 80,
               height: 28,
-              text: 'تتبع المسار',
+              text: context.translate('map.trackRoute'),
               pressed: _openExternalDirections,
               activated: true,
             ),

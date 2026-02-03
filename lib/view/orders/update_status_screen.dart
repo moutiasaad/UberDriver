@@ -288,13 +288,15 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
     });
   }
 
-  final Map<int, String> orderStatuses = {
-    1: 'تم قبول الطلب',
-    2: 'جاري الشحن',
-    3: 'تم الاستلام',
-    4: 'ملغاة',
-    5: 'مسترجعة',
-  };
+  Map<int, String> _getOrderStatuses(BuildContext context) {
+    return {
+      1: context.translate('order.statusAccepted'),
+      2: context.translate('order.statusShipping'),
+      3: context.translate('order.statusReceived'),
+      4: context.translate('order.statusCancelled'),
+      5: context.translate('order.statusReturned'),
+    };
+  }
 
   void _showStatusSheet({
     required OrderProvider order,

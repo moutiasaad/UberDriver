@@ -21,17 +21,17 @@ bool isStoreOpened(String openAt, String closeAt) {
   return now.isAfter(openTime) && now.isBefore(closeTime);
 }
 
-String convertTime(String time) {
+String convertTime(String time, {String amLabel = 'AM', String pmLabel = 'PM'}) {
   // Parse the input time string
   final parsedTime = TimeOfDay(
     hour: int.parse(time.split(":")[0]),
     minute: int.parse(time.split(":")[1]),
   );
   final isAm = parsedTime.period == DayPeriod.am;
-  final arabicPeriod = isAm ? 'ص' : 'م';
+  final period = isAm ? amLabel : pmLabel;
   final hourIn12HourFormat =
       parsedTime.hourOfPeriod == 0 ? 12 : parsedTime.hourOfPeriod;
-  return '$hourIn12HourFormat$arabicPeriod';
+  return '$hourIn12HourFormat $period';
 }
 
 TimeOfDay convertStringToTime(String time) {

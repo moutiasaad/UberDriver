@@ -73,11 +73,11 @@ class CashHelper {
   }
 
   static Future<bool> setCurrency(String? currency) async {
-    return await sharedPreferences.setString('currency', currency??'ر.س');
+    return await sharedPreferences.setString('currency', currency ?? 'SAR');
   }
 
   static String getCurrency() {
-    String currency = sharedPreferences.getString('currency') ?? 'ر.س';
+    String currency = sharedPreferences.getString('currency') ?? 'SAR';
     return currency;
   }
 

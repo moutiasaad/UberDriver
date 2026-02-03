@@ -183,7 +183,7 @@ Widget undefinedError({
                         bottom: BorderSide(
                             color: AppColors.secondary, width: 1))),
                 child: Text(
-                  'إعادة التسجيل',
+                  context.translate('profile.reRegister'),
                   style: AppTextStyle.semiBoldSecondary14,
                 ),
               ))
@@ -214,10 +214,10 @@ Widget noCategorie({
             child: Column(
               children: [
                 cText(
-                    text: "لا يوجد منتجات متاحة لهذه الفئة",
+                    text: context.translate('profile.noCategoryProducts'),
                     style: AppTextStyle.semiBoldBlack18),
                 cText(
-                  text: 'إذا تم إضافة أي منتجات جديدة سوف تجدها هنا',
+                  text: context.translate('profile.noCategoryProductsDesc'),
                   style: AppTextStyle.regularBlack2_14,
                 ),
               ],

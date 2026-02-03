@@ -85,7 +85,7 @@ class _OrderDetailState extends State<OrderDetail> {
                             size: 18,
                           ),
                           cText(
-                              text: 'رفض الطلب',
+                              text: context.translate('order.rejectOrder'),
                               style: AppTextStyle.mediumRed14),
                         ],
                       )),

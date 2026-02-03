@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:uber_driver/shared/language/extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../utils/app_text_styles.dart';
@@ -18,9 +19,9 @@ class RideTrackingMap extends StatefulWidget {
     required this.dropoffLongitude,
     this.driverLatitude,
     this.driverLongitude,
-    this.pickupLabel = 'نقطة الانطلاق',
-    this.dropoffLabel = 'نقطة الوصول',
-    this.driverLabel = 'موقعك',
+    this.pickupLabel,
+    this.dropoffLabel,
+    this.driverLabel,
     this.showNavigateButton = true,
     this.showPolylines = true,
     this.zoom = 14,
@@ -33,9 +34,9 @@ class RideTrackingMap extends StatefulWidget {
   final double dropoffLongitude;
   final double? driverLatitude;
   final double? driverLongitude;
-  final String pickupLabel;
-  final String dropoffLabel;
-  final String driverLabel;
+  final String? pickupLabel;
+  final String? dropoffLabel;
+  final String? driverLabel;
   final bool showNavigateButton;
   final bool showPolylines;
   final double zoom;
@@ -192,7 +193,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
     }
   }
 
-  List<Marker> _buildMarkers() {
+  List<Marker> _buildMarkers(BuildContext context) {
     final markers = <Marker>[];
 
     // Pickup marker (green)
@@ -202,7 +203,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
         width: 40,
         height: 40,
         child: Tooltip(
-          message: widget.pickupLabel,
+          message: widget.pickupLabel ?? context.translate('map.pickupPoint'),
           child: const Icon(
             Icons.radio_button_checked,
             color: Colors.green,
@@ -219,7 +220,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
         width: 40,
         height: 40,
         child: Tooltip(
-          message: widget.dropoffLabel,
+          message: widget.dropoffLabel ?? context.translate('map.dropoffPoint'),
           child: const Icon(
             Icons.location_on,
             color: Colors.red,
@@ -237,7 +238,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
           width: 40,
           height: 40,
           child: Tooltip(
-            message: widget.driverLabel,
+            message: widget.driverLabel ?? context.translate('map.yourLocation'),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.blue,
@@ -302,7 +303,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
                 ],
               ),
             // Markers
-            MarkerLayer(markers: _buildMarkers()),
+            MarkerLayer(markers: _buildMarkers(context)),
           ],
         ),
         // Loading indicator for route
@@ -332,7 +333,7 @@ class _RideTrackingMapState extends State<RideTrackingMap> {
               textStyle: AppTextStyle.mediumWhite12,
               width: 80,
               height: 28,
-              text: 'تتبع المسار',
+              text: context.translate('map.trackRoute'),
               pressed: _openNavigation,
               activated: true,
             ),

@@ -8,33 +8,9 @@ import '../../shared/components/buttons/default_button.dart';
 import '../../shared/components/text/CText.dart';
 import '../../shared/components/text_fields/default_form_field.dart';
 import '../../shared/error/error_component.dart';
+import '../../shared/language/extension.dart';
 import '../../utils/app_text_styles.dart';
 import '../../utils/colors.dart';
-
-// Hardcoded Arabic strings for wallet screen
-class _WalletStrings {
-  static const String title = 'المحفظة';
-  static const String totalBalance = 'الرصيد الكلي';
-  static const String todayEarnings = 'أرباح اليوم';
-  static const String weekEarnings = 'أرباح الأسبوع';
-  static const String monthEarnings = 'أرباح الشهر';
-  static const String withdraw = 'السحب';
-  static const String amount = 'المبلغ';
-  static const String minWithdrawal = 'الحد الأدنى للسحب';
-  static const String connectionError = 'مشكلة في الاتصال';
-  static const String retry = 'إعادة المحاولة';
-  static const String withdrawSuccess = 'تم سحب المبلغ بنجاح';
-  static const String withdrawError = 'حدث خطأ أثناء سحب المبلغ';
-  static const String minAmountError = 'المبلغ أقل من الحد الأدنى للسحب';
-  static const String enterAmount = 'الرجاء إدخال المبلغ';
-  static const String bankName = 'اسم البنك';
-  static const String bankAccount = 'رقم الحساب';
-  static const String bankIban = 'رقم الآيبان';
-  static const String enterBankName = 'الرجاء إدخال اسم البنك';
-  static const String enterBankAccount = 'الرجاء إدخال رقم الحساب';
-  static const String enterBankIban = 'الرجاء إدخال رقم الآيبان';
-  static const String bankDetails = 'بيانات الحساب البنكي';
-}
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -78,7 +54,7 @@ class _WalletScreenState extends State<WalletScreen> {
           appBar: designSheetAppBar(
             isLeading: true,
             isCentred: false,
-            text: _WalletStrings.title,
+            text: context.translate('wallet.title'),
             context: context,
             style: AppTextStyle.semiBoldBlack18,
           ),
@@ -106,7 +82,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _WalletStrings.connectionError,
+                          context.translate('wallet.connectionError'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey[600],
@@ -120,7 +96,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               _walletFuture = _loadWallet();
                             });
                           },
-                          child: const Text(_WalletStrings.retry),
+                          child: Text(context.translate('buttons.retry')),
                         ),
                       ],
                     ),
@@ -174,7 +150,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             cText(
-                              text: _WalletStrings.totalBalance,
+                              text: context.translate('wallet.totalBalance'),
                               style: AppTextStyle.semiBoldWhite14,
                             ),
                             const SizedBox(height: 12),
@@ -216,7 +192,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${_WalletStrings.minWithdrawal}: ${wallet.minWithdrawalAmount.toStringAsFixed(0)} ${wallet.currencySymbol}',
+                                    '${context.translate('wallet.minWithdrawal')}: ${wallet.minWithdrawalAmount.toStringAsFixed(0)} ${wallet.currencySymbol}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
@@ -236,7 +212,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           children: [
                             Expanded(
                               child: _buildEarningCard(
-                                title: _WalletStrings.todayEarnings,
+                                title: context.translate('wallet.todayEarnings'),
                                 amount: wallet.todayEarnings,
                                 symbol: wallet.currencySymbol,
                                 icon: Icons.today,
@@ -246,7 +222,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildEarningCard(
-                                title: _WalletStrings.weekEarnings,
+                                title: context.translate('wallet.weekEarnings'),
                                 amount: wallet.weekEarnings,
                                 symbol: wallet.currencySymbol,
                                 icon: Icons.date_range,
@@ -262,7 +238,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: _buildEarningCard(
-                          title: _WalletStrings.monthEarnings,
+                          title: context.translate('wallet.monthEarnings'),
                           amount: wallet.monthEarnings,
                           symbol: wallet.currencySymbol,
                           icon: Icons.calendar_month,
@@ -281,7 +257,7 @@ class _WalletScreenState extends State<WalletScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: DefaultButton(
               loading: walletProvider.loading,
-              text: _WalletStrings.withdraw,
+              text: context.translate('wallet.withdraw'),
               pressed: () {
                 if (walletProvider.hasWallet) {
                   _showWithdrawSheet(
@@ -400,20 +376,20 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                   const SizedBox(height: 20),
                   cText(
-                    text: _WalletStrings.withdraw,
+                    text: context.translate('wallet.withdraw'),
                     style: AppTextStyle.semiBoldBlack18,
                   ),
                   const SizedBox(height: 8),
                   if (wallet != null)
                     cText(
-                      text: '${_WalletStrings.minWithdrawal}: ${wallet.minWithdrawalAmount.toStringAsFixed(0)} ${wallet.currencySymbol}',
+                      text: '${context.translate('wallet.minWithdrawal')}: ${wallet.minWithdrawalAmount.toStringAsFixed(0)} ${wallet.currencySymbol}',
                       style: AppTextStyle.regularBlack1_12,
                     ),
                   const SizedBox(height: 16),
 
                   // Amount field
                   DefaultFormField(
-                    hint: _WalletStrings.amount,
+                    hint: context.translate('wallet.amount'),
                     contoller: amountController,
                     type: TextInputType.number,
                   ),
@@ -421,14 +397,14 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   // Bank details section
                   cText(
-                    text: _WalletStrings.bankDetails,
+                    text: context.translate('wallet.bankDetails'),
                     style: AppTextStyle.mediumBlack14,
                   ),
                   const SizedBox(height: 12),
 
                   // Bank name field
                   DefaultFormField(
-                    hint: _WalletStrings.bankName,
+                    hint: context.translate('wallet.bankName'),
                     contoller: bankNameController,
                     type: TextInputType.text,
                   ),
@@ -436,7 +412,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   // Bank account field
                   DefaultFormField(
-                    hint: _WalletStrings.bankAccount,
+                    hint: context.translate('wallet.bankAccount'),
                     contoller: bankAccountController,
                     type: TextInputType.number,
                   ),
@@ -444,7 +420,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   // Bank IBAN field
                   DefaultFormField(
-                    hint: _WalletStrings.bankIban,
+                    hint: context.translate('wallet.bankIban'),
                     contoller: bankIbanController,
                     type: TextInputType.text,
                   ),
@@ -452,13 +428,13 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   DefaultButton(
                     loading: walletProvider.loading,
-                    text: _WalletStrings.withdraw,
+                    text: context.translate('wallet.withdraw'),
                     pressed: () {
                       // Validate amount
                       if (amountController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_WalletStrings.enterAmount),
+                            content: Text(context.translate('wallet.enterAmount')),
                             backgroundColor: AppColors.error,
                           ),
                         );
@@ -470,7 +446,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       if (wallet != null && amount < wallet.minWithdrawalAmount) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_WalletStrings.minAmountError),
+                            content: Text(context.translate('wallet.minAmountError')),
                             backgroundColor: AppColors.error,
                           ),
                         );
@@ -481,7 +457,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       if (bankNameController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_WalletStrings.enterBankName),
+                            content: Text(context.translate('wallet.enterBankName')),
                             backgroundColor: AppColors.error,
                           ),
                         );
@@ -492,7 +468,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       if (bankAccountController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_WalletStrings.enterBankAccount),
+                            content: Text(context.translate('wallet.enterBankAccount')),
                             backgroundColor: AppColors.error,
                           ),
                         );
@@ -503,7 +479,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       if (bankIbanController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_WalletStrings.enterBankIban),
+                            content: Text(context.translate('wallet.enterBankIban')),
                             backgroundColor: AppColors.error,
                           ),
                         );

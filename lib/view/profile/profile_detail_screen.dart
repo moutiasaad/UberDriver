@@ -7,49 +7,12 @@ import '../../../shared/components/buttons/default_button.dart';
 import '../../providers/profile_provider.dart';
 import '../../shared/components/buttons/default_outlined_button.dart';
 import '../../shared/components/text/CText.dart';
+import '../../shared/language/extension.dart';
 import '../../shared/local/cash_helper.dart';
 import '../../shared/local/secure_cash_helper.dart';
 import '../../utils/app_text_styles.dart';
 import '../../utils/colors.dart';
 import '../login/login_layout.dart';
-
-// Hardcoded Arabic strings for profile screen
-class _ProfileStrings {
-  static const String title = 'بياناتي';
-  static const String personalInfo = 'المعلومات الشخصية';
-  static const String name = 'الاسم';
-  static const String email = 'البريد الالكتروني';
-  static const String phone = 'رقم الجوال';
-  static const String vehicleInfo = 'معلومات المركبة';
-  static const String vehicleType = 'نوع المركبة';
-  static const String vehicleModel = 'موديل المركبة';
-  static const String vehicleColor = 'لون المركبة';
-  static const String plateNumber = 'رقم اللوحة';
-  static const String licenseInfo = 'معلومات الرخصة';
-  static const String licenseNumber = 'رقم الرخصة';
-  static const String licenseExpiry = 'تاريخ انتهاء الرخصة';
-  static const String accountStatus = 'حالة الحساب';
-  static const String status = 'الحالة';
-  static const String rating = 'التقييم';
-  static const String totalTrips = 'إجمالي الرحلات';
-  static const String walletBalance = 'رصيد المحفظة';
-  static const String earnings = 'الأرباح';
-  static const String todayEarnings = 'أرباح اليوم';
-  static const String weekEarnings = 'أرباح الأسبوع';
-  static const String monthEarnings = 'أرباح الشهر';
-  static const String deleteAccount = 'حذف الحساب';
-  static const String deleteConfirmTitle = 'هل انت متأكد من رغبتك في حذف الحساب؟';
-  static const String deleteConfirmDesc = 'سيتم حذف الحساب نهائياً بعد 30 يوم وحذف جميع معلوماتك، خلال هذه المدة يمكنك استرجاع حسابك واستعادة بياناتك';
-  static const String noDelete = 'لا، لا تقم بحذفه';
-  static const String yesDelete = 'نعم، انا متأكد';
-  static const String online = 'متصل';
-  static const String offline = 'غير متصل';
-  static const String available = 'متاح';
-  static const String unavailable = 'غير متاح';
-  static const String connectionError = 'مشكلة في الاتصال';
-  static const String retry = 'إعادة المحاولة';
-  static const String noData = 'لا توجد بيانات';
-}
 
 class ProfileDetailScreen extends StatefulWidget {
   const ProfileDetailScreen({super.key});
@@ -82,7 +45,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           backgroundColor: BackgroundColor.background,
           appBar: AppBar(
             title: cText(
-              text: _ProfileStrings.title,
+              text: context.translate('profile.detail'),
               style: AppTextStyle.semiBoldPrimary20,
             ),
             elevation: 0.5,
@@ -118,7 +81,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _ProfileStrings.connectionError,
+                          context.translate('profile.connectionError'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey[600],
@@ -132,7 +95,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                               _profileFuture = _loadProfile();
                             });
                           },
-                          child: const Text(_ProfileStrings.retry),
+                          child: Text(context.translate('buttons.retry')),
                         ),
                       ],
                     ),
@@ -144,7 +107,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               if (!profileProvider.hasProfile) {
                 return Center(
                   child: Text(
-                    _ProfileStrings.noData,
+                    context.translate('profile.noData'),
                     style: AppTextStyle.regularBlack1_14,
                   ),
                 );
@@ -172,27 +135,27 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                       // Earnings Section
                       _buildSection(
-                        title: _ProfileStrings.earnings,
+                        title: context.translate('profile.earnings'),
                         icon: Icons.account_balance_wallet,
                         children: [
                           _buildInfoRow(
-                            _ProfileStrings.todayEarnings,
+                            context.translate('wallet.todayEarnings'),
                             '${profile.todayEarnings.toStringAsFixed(2)} $currency',
                             valueColor: AppColors.success,
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.weekEarnings,
+                            context.translate('wallet.weekEarnings'),
                             '${profile.weekEarnings.toStringAsFixed(2)} $currency',
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.monthEarnings,
+                            context.translate('wallet.monthEarnings'),
                             '${profile.monthEarnings.toStringAsFixed(2)} $currency',
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.walletBalance,
+                            context.translate('profile.walletBalance'),
                             '${profile.walletBalance.toStringAsFixed(2)} $currency',
                             valueColor: AppColors.primary,
                           ),
@@ -203,14 +166,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                       // Personal Info Section
                       _buildSection(
-                        title: _ProfileStrings.personalInfo,
+                        title: context.translate('profile.personalInfo'),
                         icon: Icons.person,
                         children: [
-                          _buildInfoRow(_ProfileStrings.name, profile.name),
+                          _buildInfoRow(context.translate('profile.name'), profile.name),
                           _buildDivider(),
-                          _buildInfoRow(_ProfileStrings.email, profile.email),
+                          _buildInfoRow(context.translate('profile.email'), profile.email),
                           _buildDivider(),
-                          _buildInfoRow(_ProfileStrings.phone, profile.phone),
+                          _buildInfoRow(context.translate('profile.phone'), profile.phone),
                         ],
                       ),
 
@@ -218,26 +181,28 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                       // Vehicle Info Section
                       _buildSection(
-                        title: _ProfileStrings.vehicleInfo,
+                        title: context.translate('profile.vehicleInfo'),
                         icon: Icons.directions_car,
                         children: [
                           _buildInfoRow(
-                            _ProfileStrings.vehicleType,
-                            profile.vehicleTypeText,
+                            context.translate('profile.vehicleType'),
+                            profile.vehicleTypeTranslationKey.contains('.')
+                                ? context.translate(profile.vehicleTypeTranslationKey)
+                                : profile.vehicleTypeTranslationKey,
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.vehicleModel,
+                            context.translate('profile.vehicleModel'),
                             profile.vehicleModel ?? '-',
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.vehicleColor,
+                            context.translate('profile.vehicleColor'),
                             profile.vehicleColor ?? '-',
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.plateNumber,
+                            context.translate('profile.plateNumber'),
                             profile.plateNumber ?? '-',
                           ),
                         ],
@@ -247,16 +212,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                       // License Info Section
                       _buildSection(
-                        title: _ProfileStrings.licenseInfo,
+                        title: context.translate('profile.licenseInfo'),
                         icon: Icons.badge,
                         children: [
                           _buildInfoRow(
-                            _ProfileStrings.licenseNumber,
+                            context.translate('profile.licenseNumber'),
                             profile.licenseNumber ?? '-',
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.licenseExpiry,
+                            context.translate('profile.licenseExpiry'),
                             profile.licenseExpiry ?? '-',
                           ),
                         ],
@@ -266,24 +231,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                       // Account Status Section
                       _buildSection(
-                        title: _ProfileStrings.accountStatus,
+                        title: context.translate('profile.accountStatus'),
                         icon: Icons.verified_user,
                         children: [
                           _buildInfoRow(
-                            _ProfileStrings.status,
-                            profile.statusText,
+                            context.translate('profile.status'),
+                            profile.statusTranslationKey.contains('.')
+                                ? context.translate(profile.statusTranslationKey)
+                                : profile.statusTranslationKey,
                             valueColor: profile.isApproved
                                 ? AppColors.success
                                 : AppColors.warning,
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.rating,
+                            context.translate('profile.rating'),
                             '${profile.ratingAverage.toStringAsFixed(1)} / 5.0',
                           ),
                           _buildDivider(),
                           _buildInfoRow(
-                            _ProfileStrings.totalTrips,
+                            context.translate('profile.totalTrips'),
                             '${profile.totalTrips}',
                           ),
                         ],
@@ -314,7 +281,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                               ),
                               const SizedBox(width: 8),
                               cText(
-                                text: _ProfileStrings.deleteAccount,
+                                text: context.translate('profile.deleteAccount'),
                                 style: AppTextStyle.mediumRed14,
                               ),
                             ],
@@ -378,24 +345,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   style: AppTextStyle.regularBlack1_14,
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildStatusBadge(
-                      profile.isOnline
-                          ? _ProfileStrings.online
-                          : _ProfileStrings.offline,
-                      profile.isOnline ? AppColors.success : AppColors.error,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatusBadge(
-                      profile.isAvailable
-                          ? _ProfileStrings.available
-                          : _ProfileStrings.unavailable,
-                      profile.isAvailable
-                          ? AppColors.info
-                          : AppColors.warning,
-                    ),
-                  ],
+                Builder(
+                  builder: (context) => Row(
+                    children: [
+                      _buildStatusBadge(
+                        profile.isOnline
+                            ? context.translate('profile.online')
+                            : context.translate('profile.offline'),
+                        profile.isOnline ? AppColors.success : AppColors.error,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildStatusBadge(
+                        profile.isAvailable
+                            ? context.translate('profile.available')
+                            : context.translate('profile.unavailable'),
+                        profile.isAvailable
+                            ? AppColors.info
+                            : AppColors.warning,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -437,38 +406,40 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  Widget _buildStatusCards(profile) {
+  Widget _buildStatusCards(dynamic profile) {
     final currency = CashHelper.getCurrency();
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.star,
-            value: profile.ratingAverage.toStringAsFixed(1),
-            label: _ProfileStrings.rating,
-            color: AppColors.warning,
+    return Builder(
+      builder: (context) => Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              icon: Icons.star,
+              value: profile.ratingAverage.toStringAsFixed(1),
+              label: context.translate('profile.rating'),
+              color: AppColors.warning,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.directions_car,
-            value: '${profile.totalTrips}',
-            label: _ProfileStrings.totalTrips,
-            color: AppColors.info,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              icon: Icons.directions_car,
+              value: '${profile.totalTrips}',
+              label: context.translate('profile.totalTrips'),
+              color: AppColors.info,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.account_balance_wallet,
-            value: '${profile.walletBalance.toStringAsFixed(0)} $currency',
-            label: _ProfileStrings.walletBalance,
-            color: AppColors.success,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              icon: Icons.account_balance_wallet,
+              value: '${profile.walletBalance.toStringAsFixed(0)} $currency',
+              label: context.translate('profile.walletBalance'),
+              color: AppColors.success,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -598,57 +569,59 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     width: double.infinity,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: cText(
-                                text: _ProfileStrings.deleteConfirmTitle,
-                                style: AppTextStyle.semiBoldBlack18,
+                    child: Builder(
+                      builder: (dialogContext) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: cText(
+                                  text: dialogContext.translate('profile.deleteConfirmTitle'),
+                                  style: AppTextStyle.semiBoldBlack18,
+                                ),
                               ),
-                            ),
-                            CancelButton(
-                              size: 25,
-                              context: context,
-                              icon: CupertinoIcons.xmark,
-                              cancel: () => Navigator.pop(context),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        cText(
-                          text: _ProfileStrings.deleteConfirmDesc,
-                          style: AppTextStyle.regularBlack1_14,
-                        ),
-                        const SizedBox(height: 16),
-                        DefaultButton(
-                          raduis: 6,
-                          text: _ProfileStrings.noDelete,
-                          pressed: () => Navigator.pop(context),
-                          activated: true,
-                        ),
-                        const SizedBox(height: 12),
-                        DefaultOutlinedButton(
-                          ContainerColor: TextColor.red,
-                          textStyle: AppTextStyle.mediumRed14,
-                          raduis: 6,
-                          text: _ProfileStrings.yesDelete,
-                          pressed: () async {
-                            await CashHelper.clearData();
-                            await SecureCashHelper.clear();
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginLayout(),
+                              CancelButton(
+                                size: 25,
+                                context: context,
+                                icon: CupertinoIcons.xmark,
+                                cancel: () => Navigator.pop(context),
                               ),
-                              (route) => false,
-                            );
-                          },
-                        ),
-                      ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          cText(
+                            text: dialogContext.translate('profile.deleteConfirmDesc'),
+                            style: AppTextStyle.regularBlack1_14,
+                          ),
+                          const SizedBox(height: 16),
+                          DefaultButton(
+                            raduis: 6,
+                            text: dialogContext.translate('profile.noDelete'),
+                            pressed: () => Navigator.pop(context),
+                            activated: true,
+                          ),
+                          const SizedBox(height: 12),
+                          DefaultOutlinedButton(
+                            ContainerColor: TextColor.red,
+                            textStyle: AppTextStyle.mediumRed14,
+                            raduis: 6,
+                            text: dialogContext.translate('profile.yesDelete'),
+                            pressed: () async {
+                              await CashHelper.clearData();
+                              await SecureCashHelper.clear();
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginLayout(),
+                                ),
+                                (route) => false,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

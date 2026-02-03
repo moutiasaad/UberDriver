@@ -75,10 +75,10 @@ class DriverProfileModel {
       walletBalance: (json['wallet_balance'] ?? 0).toDouble(),
       language: json['language'],
       currentLatitude: json['current_latitude'] != null
-          ? (json['current_latitude']).toDouble()
+          ? double.tryParse(json['current_latitude'].toString())
           : null,
       currentLongitude: json['current_longitude'] != null
-          ? (json['current_longitude']).toDouble()
+          ? double.tryParse(json['current_longitude'].toString())
           : null,
       todayEarnings: (json['today_earnings'] ?? 0).toDouble(),
       weekEarnings: (json['week_earnings'] ?? 0).toDouble(),
@@ -119,33 +119,33 @@ class DriverProfileModel {
     };
   }
 
-  /// Get status text in Arabic
-  String get statusText {
+  /// Get status translation key
+  String get statusTranslationKey {
     switch (status.toLowerCase()) {
       case 'approved':
-        return 'معتمد';
+        return 'driverStatus.approved';
       case 'pending':
-        return 'قيد المراجعة';
+        return 'driverStatus.pending';
       case 'rejected':
-        return 'مرفوض';
+        return 'driverStatus.rejected';
       case 'suspended':
-        return 'موقوف';
+        return 'driverStatus.suspended';
       default:
         return status;
     }
   }
 
-  /// Get vehicle type text in Arabic
-  String get vehicleTypeText {
+  /// Get vehicle type translation key
+  String get vehicleTypeTranslationKey {
     switch (vehicleType?.toLowerCase()) {
       case 'sedan':
-        return 'سيدان';
+        return 'vehicleType.sedan';
       case 'suv':
-        return 'دفع رباعي';
+        return 'vehicleType.suv';
       case 'van':
-        return 'فان';
+        return 'vehicleType.van';
       case 'motorcycle':
-        return 'دراجة نارية';
+        return 'vehicleType.motorcycle';
       default:
         return vehicleType ?? '';
     }

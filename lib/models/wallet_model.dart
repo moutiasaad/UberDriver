@@ -24,7 +24,7 @@ class WalletModel {
       weekEarnings: (json['week_earnings'] ?? 0).toDouble(),
       monthEarnings: (json['month_earnings'] ?? 0).toDouble(),
       currency: json['currency'] ?? 'SAR',
-      currencySymbol: json['currency_symbol'] ?? 'ر.س',
+      currencySymbol: json['currency_symbol'] ?? 'SAR',
       minWithdrawalAmount: (json['min_withdrawal_amount'] ?? 0).toDouble(),
     );
   }

@@ -9,30 +9,10 @@ import '../../shared/components/buttons/default_button.dart';
 import '../../shared/components/buttons/default_outlined_button.dart';
 import '../../shared/components/map/ride_tracking_map.dart';
 import '../../shared/components/text/CText.dart';
+import '../../shared/language/extension.dart';
 import '../../shared/local/cash_helper.dart';
 import '../../utils/app_text_styles.dart';
 import '../../utils/colors.dart';
-
-// Hardcoded Arabic strings for active ride screen
-class _ActiveRideStrings {
-  static const String pickup = 'نقطة الانطلاق';
-  static const String dropoff = 'نقطة الوصول';
-  static const String distance = 'المسافة';
-  static const String duration = 'المدة';
-  static const String fare = 'الأجرة';
-  static const String navigate = 'تنقل';
-  static const String arrivedAtPickup = 'وصلت لنقطة الانطلاق';
-  static const String startRide = 'بدء الرحلة';
-  static const String completeRide = 'إنهاء الرحلة';
-  static const String updateStatus = 'تحديث الحالة';
-  static const String confirmStatus = 'تأكيد تحديث الحالة';
-  static const String confirmArrived = 'هل أنت متأكد أنك وصلت لنقطة الانطلاق؟';
-  static const String confirmStart = 'هل أنت متأكد من بدء الرحلة؟';
-  static const String confirmComplete = 'هل أنت متأكد من إنهاء الرحلة؟';
-  static const String confirmUpdate = 'هل أنت متأكد من تحديث الحالة؟';
-  static const String cancel = 'الغاء';
-  static const String confirm = 'تأكيد';
-}
 
 class ActiveRideScreen extends StatefulWidget {
   const ActiveRideScreen({super.key, required this.ride});
@@ -77,9 +57,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           Positioned.fill(
             child: RideTrackingMap(
               zoom: 14,
-              pickupLabel: _ActiveRideStrings.pickup,
-              dropoffLabel: _ActiveRideStrings.dropoff,
-              driverLabel: 'موقعك',
+              pickupLabel: context.translate('ride.pickup'),
+              dropoffLabel: context.translate('ride.dropoff'),
+              driverLabel: context.translate('activeRide.yourLocation'),
               pickupLatitude: _currentRide.pickup.latitude,
               pickupLongitude: _currentRide.pickup.longitude,
               dropoffLatitude: _currentRide.dropoff.latitude,
@@ -254,7 +234,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             _buildLocationRow(
                               icon: Icons.radio_button_checked,
                               iconColor: AppColors.success,
-                              label: _ActiveRideStrings.pickup,
+                              label: context.translate('ride.pickup'),
                               address: _currentRide.pickup.address,
                             ),
                             // Line connector
@@ -270,7 +250,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             _buildLocationRow(
                               icon: Icons.location_on,
                               iconColor: AppColors.error,
-                              label: _ActiveRideStrings.dropoff,
+                              label: context.translate('ride.dropoff'),
                               address: _currentRide.dropoff.address,
                             ),
                           ],
@@ -285,25 +265,25 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           Expanded(
                             child: _buildInfoCard(
                               icon: Icons.route,
-                              label: _ActiveRideStrings.distance,
+                              label: context.translate('ride.distance'),
                               value:
-                                  '${_currentRide.distanceKm.toStringAsFixed(1)} km',
+                                  '${_currentRide.distanceKm.toStringAsFixed(1)} ${context.translate('ride.km')}',
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildInfoCard(
                               icon: Icons.access_time,
-                              label: _ActiveRideStrings.duration,
+                              label: context.translate('ride.duration'),
                               value:
-                                  '${_currentRide.estimatedDurationMinutes} min',
+                                  '${_currentRide.estimatedDurationMinutes} ${context.translate('ride.min')}',
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildInfoCard(
                               icon: Icons.attach_money,
-                              label: _ActiveRideStrings.fare,
+                              label: context.translate('ride.fare'),
                               value:
                                   '${_currentRide.fare.finalAmount.toStringAsFixed(0)} $currency',
                               valueColor: AppColors.primary,
@@ -321,7 +301,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           Expanded(
                             child: DefaultOutlinedButton(
                               raduis: 8,
-                              text: _ActiveRideStrings.navigate,
+                              text: context.translate('activeRide.navigate'),
                               textStyle: AppTextStyle.semiBoldPrimary14,
                               leftIcon: Icon(
                                 Icons.navigation,
@@ -339,7 +319,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                               flex: 2,
                               child: DefaultButton(
                                 raduis: 8,
-                                text: _getNextStatusButtonText(),
+                                text: _getNextStatusButtonText(context),
                                 pressed: () {
                                   _showStatusUpdateDialog(context);
                                 },
@@ -463,16 +443,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
            status == 'in_progress';
   }
 
-  String _getNextStatusButtonText() {
+  String _getNextStatusButtonText(BuildContext context) {
     switch (_currentRide.status.toLowerCase()) {
       case 'accepted':
-        return _ActiveRideStrings.arrivedAtPickup;
+        return context.translate('activeRide.arrivedAtPickup');
       case 'driver_arrived':
-        return _ActiveRideStrings.startRide;
+        return context.translate('activeRide.startRide');
       case 'in_progress':
-        return _ActiveRideStrings.completeRide;
+        return context.translate('activeRide.completeRide');
       default:
-        return _ActiveRideStrings.updateStatus;
+        return context.translate('activeRide.updateStatus');
     }
   }
 
@@ -525,12 +505,12 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                   ),
                   const SizedBox(height: 20),
                   cText(
-                    text: _ActiveRideStrings.confirmStatus,
+                    text: context.translate('activeRide.confirmStatus'),
                     style: AppTextStyle.mediumBlack16,
                   ),
                   const SizedBox(height: 8),
                   cText(
-                    text: _getStatusConfirmMessage(),
+                    text: _getStatusConfirmMessage(context),
                     style: AppTextStyle.regularBlack1_14,
                   ),
                   const SizedBox(height: 24),
@@ -539,7 +519,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       Expanded(
                         child: DefaultOutlinedButton(
                           raduis: 8,
-                          text: _ActiveRideStrings.cancel,
+                          text: context.translate('buttons.cancel'),
                           textStyle: AppTextStyle.semiBoldBlack14,
                           pressed: isLoading ? () {} : () => Navigator.pop(dialogContext),
                         ),
@@ -548,7 +528,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       Expanded(
                         child: DefaultButton(
                           raduis: 8,
-                          text: isLoading ? '...' : _ActiveRideStrings.confirm,
+                          text: isLoading ? '...' : context.translate('buttons.confirm'),
                           pressed: isLoading
                               ? () {}
                               : () async {
@@ -601,16 +581,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     );
   }
 
-  String _getStatusConfirmMessage() {
+  String _getStatusConfirmMessage(BuildContext context) {
     switch (_currentRide.status.toLowerCase()) {
       case 'accepted':
-        return _ActiveRideStrings.confirmArrived;
+        return context.translate('activeRide.confirmArrived');
       case 'driver_arrived':
-        return _ActiveRideStrings.confirmStart;
+        return context.translate('activeRide.confirmStart');
       case 'in_progress':
-        return _ActiveRideStrings.confirmComplete;
+        return context.translate('activeRide.confirmComplete');
       default:
-        return _ActiveRideStrings.confirmUpdate;
+        return context.translate('activeRide.confirmUpdate');
     }
   }
 

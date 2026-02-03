@@ -5,26 +5,10 @@ import '../../providers/order_provider.dart';
 import '../../shared/components/appBar/design_sheet_app_bar.dart';
 import '../../shared/components/text/CText.dart';
 import '../../shared/error/error_component.dart';
+import '../../shared/language/extension.dart';
 import '../../utils/app_text_styles.dart';
 import '../../utils/colors.dart';
 import 'active_ride.dart';
-
-// Hardcoded Arabic strings for orders screen
-class _OrdersStrings {
-  static const String title = 'سجل الرحلات';
-  static const String noRides = 'لا توجد رحلات';
-  static const String connectionError = 'مشكلة في الاتصال';
-  static const String retry = 'إعادة المحاولة';
-  static const String loadMore = 'تحميل المزيد';
-  static const String from = 'من';
-  static const String to = 'إلى';
-  static const String fare = 'الأجرة';
-  static const String distance = 'المسافة';
-  static const String km = 'كم';
-  static const String completed = 'مكتملة';
-  static const String cancelled = 'ملغية';
-  static const String inProgress = 'جارية';
-}
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key, this.profile = false});
@@ -77,7 +61,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             isLeading: widget.profile,
             isCentred: false,
             icon: Icons.arrow_back,
-            text: _OrdersStrings.title,
+            text: context.translate('orders.title'),
             context: context,
             style: AppTextStyle.semiBoldBlack18,
           ),
@@ -105,7 +89,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _OrdersStrings.connectionError,
+                          context.translate('orders.connectionError'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey[600],
@@ -119,7 +103,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               _historyFuture = _loadHistory();
                             });
                           },
-                          child: const Text(_OrdersStrings.retry),
+                          child: Text(context.translate('buttons.retry')),
                         ),
                       ],
                     ),
@@ -186,7 +170,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ? const CircularProgressIndicator()
             : TextButton(
                 onPressed: () => orderProvider.loadMoreHistory(),
-                child: const Text(_OrdersStrings.loadMore),
+                child: Text(context.translate('orders.loadMore')),
               ),
       ),
     );
@@ -221,7 +205,7 @@ class _RideHistoryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatusBadge(ride.status),
+              _buildStatusBadge(context, ride.status),
               Text(
                 _formatDate(ride.timestamps.createdAt),
                 style: AppTextStyle.regularBlack1_12,
@@ -247,7 +231,7 @@ class _RideHistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     cText(
-                      text: _OrdersStrings.from,
+                      text: context.translate('orders.from'),
                       style: AppTextStyle.regularBlack1_12,
                     ),
                     const SizedBox(height: 2),
@@ -293,7 +277,7 @@ class _RideHistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     cText(
-                      text: _OrdersStrings.to,
+                      text: context.translate('orders.to'),
                       style: AppTextStyle.regularBlack1_12,
                     ),
                     const SizedBox(height: 2),
@@ -317,8 +301,9 @@ class _RideHistoryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildInfoItem(
+                  context: context,
                   icon: Icons.attach_money,
-                  label: _OrdersStrings.fare,
+                  label: context.translate('ride.fare'),
                   value: ride.fare.finalAmount.toStringAsFixed(2),
                   color: AppColors.success,
                 ),
@@ -330,9 +315,10 @@ class _RideHistoryCard extends StatelessWidget {
               ),
               Expanded(
                 child: _buildInfoItem(
+                  context: context,
                   icon: Icons.straighten,
-                  label: _OrdersStrings.distance,
-                  value: '${ride.distanceKm.toStringAsFixed(1)} ${_OrdersStrings.km}',
+                  label: context.translate('ride.distance'),
+                  value: '${ride.distanceKm.toStringAsFixed(1)} ${context.translate('ride.km')}',
                   color: AppColors.info,
                 ),
               ),
@@ -343,7 +329,7 @@ class _RideHistoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String? status) {
+  Widget _buildStatusBadge(BuildContext context, String? status) {
     Color backgroundColor;
     Color textColor;
     String text;
@@ -352,17 +338,17 @@ class _RideHistoryCard extends StatelessWidget {
       case 'completed':
         backgroundColor = AppColors.success.withOpacity(0.1);
         textColor = AppColors.success;
-        text = _OrdersStrings.completed;
+        text = context.translate('status.completed');
         break;
       case 'cancelled':
         backgroundColor = AppColors.error.withOpacity(0.1);
         textColor = AppColors.error;
-        text = _OrdersStrings.cancelled;
+        text = context.translate('status.cancelled');
         break;
       default:
         backgroundColor = AppColors.warning.withOpacity(0.1);
         textColor = AppColors.warning;
-        text = _OrdersStrings.inProgress;
+        text = context.translate('status.inProgress');
     }
 
     return Container(
@@ -383,6 +369,7 @@ class _RideHistoryCard extends StatelessWidget {
   }
 
   Widget _buildInfoItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
@@ -452,7 +439,7 @@ class _RideDetailBottomSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'تفاصيل الرحلة #${ride.id}',
+                  '${context.translate('orders.rideDetails')} #${ride.id}',
                   style: AppTextStyle.semiBoldBlack18,
                 ),
                 IconButton(
@@ -472,14 +459,14 @@ class _RideDetailBottomSheet extends StatelessWidget {
                 children: [
                   // Status
                   _buildSection(
-                    title: 'الحالة',
-                    child: _buildStatusBadge(ride.status),
+                    title: context.translate('rideDetail.status'),
+                    child: _buildStatusBadge(context, ride.status),
                   ),
                   const SizedBox(height: 20),
 
                   // Customer Info
                   _buildSection(
-                    title: 'معلومات العميل',
+                    title: context.translate('orders.customerInfo'),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -505,7 +492,7 @@ class _RideDetailBottomSheet extends StatelessWidget {
 
                   // Locations
                   _buildSection(
-                    title: 'المواقع',
+                    title: context.translate('rideDetail.locations'),
                     child: Column(
                       children: [
                         // Pickup
@@ -518,7 +505,7 @@ class _RideDetailBottomSheet extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(_OrdersStrings.from, style: AppTextStyle.regularBlack1_12),
+                                  Text(context.translate('orders.from'), style: AppTextStyle.regularBlack1_12),
                                   const SizedBox(height: 4),
                                   Text(ride.pickup.address, style: AppTextStyle.mediumBlack14),
                                   if (ride.pickup.time != null) ...[
@@ -555,7 +542,7 @@ class _RideDetailBottomSheet extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(_OrdersStrings.to, style: AppTextStyle.regularBlack1_12),
+                                  Text(context.translate('orders.to'), style: AppTextStyle.regularBlack1_12),
                                   const SizedBox(height: 4),
                                   Text(ride.dropoff.address, style: AppTextStyle.mediumBlack14),
                                 ],
@@ -570,17 +557,17 @@ class _RideDetailBottomSheet extends StatelessWidget {
 
                   // Fare Details
                   _buildSection(
-                    title: 'تفاصيل الأجرة',
+                    title: context.translate('rideDetail.fareDetails'),
                     child: Column(
                       children: [
-                        _buildFareRow('الأجرة الأساسية', ride.fare.baseFare),
-                        _buildFareRow('أجرة المسافة', ride.fare.distanceFare),
+                        _buildFareRow(context.translate('rideDetail.baseFare'), ride.fare.baseFare),
+                        _buildFareRow(context.translate('rideDetail.distanceFare'), ride.fare.distanceFare),
                         if (ride.fare.discountAmount > 0)
-                          _buildFareRow('الخصم', -ride.fare.discountAmount, isDiscount: true),
+                          _buildFareRow(context.translate('rideDetail.discount'), -ride.fare.discountAmount, isDiscount: true),
                         if (ride.fare.pointsDiscount > 0)
-                          _buildFareRow('خصم النقاط', -ride.fare.pointsDiscount, isDiscount: true),
+                          _buildFareRow(context.translate('orders.pointsDiscount'), -ride.fare.pointsDiscount, isDiscount: true),
                         const Divider(),
-                        _buildFareRow('المجموع', ride.fare.finalAmount, isBold: true),
+                        _buildFareRow(context.translate('rideDetail.totalFare'), ride.fare.finalAmount, isBold: true),
                       ],
                     ),
                   ),
@@ -588,15 +575,15 @@ class _RideDetailBottomSheet extends StatelessWidget {
 
                   // Trip Info
                   _buildSection(
-                    title: 'معلومات الرحلة',
+                    title: context.translate('rideDetail.rideInfo'),
                     child: Column(
                       children: [
-                        _buildInfoRow('المسافة', '${ride.distanceKm.toStringAsFixed(1)} ${_OrdersStrings.km}'),
-                        _buildInfoRow('المدة المقدرة', '${ride.estimatedDurationMinutes} دقيقة'),
+                        _buildInfoRow(context.translate('ride.distance'), '${ride.distanceKm.toStringAsFixed(1)} ${context.translate('ride.km')}'),
+                        _buildInfoRow(context.translate('orders.estimatedDuration'), '${ride.estimatedDurationMinutes} ${context.translate('orders.minute')}'),
                         if (ride.actualDurationMinutes != null)
-                          _buildInfoRow('المدة الفعلية', '${ride.actualDurationMinutes} دقيقة'),
-                        _buildInfoRow('طريقة الدفع', _getPaymentMethodText(ride.paymentMethod)),
-                        _buildInfoRow('حالة الدفع', _getPaymentStatusText(ride.paymentStatus)),
+                          _buildInfoRow(context.translate('orders.actualDuration'), '${ride.actualDurationMinutes} ${context.translate('orders.minute')}'),
+                        _buildInfoRow(context.translate('ride.paymentMethod'), _getPaymentMethodText(context, ride.paymentMethod)),
+                        _buildInfoRow(context.translate('rideDetail.paymentStatus'), _getPaymentStatusText(context, ride.paymentStatus)),
                       ],
                     ),
                   ),
@@ -604,21 +591,21 @@ class _RideDetailBottomSheet extends StatelessWidget {
 
                   // Timestamps
                   _buildSection(
-                    title: 'التوقيتات',
+                    title: context.translate('orders.timestamps'),
                     child: Column(
                       children: [
                         if (ride.timestamps.createdAt != null)
-                          _buildTimestampRow('تاريخ الإنشاء', ride.timestamps.createdAt!),
+                          _buildTimestampRow(context.translate('rideDetail.createdAt'), ride.timestamps.createdAt!),
                         if (ride.timestamps.acceptedAt != null)
-                          _buildTimestampRow('تاريخ القبول', ride.timestamps.acceptedAt!),
+                          _buildTimestampRow(context.translate('orders.acceptedAt'), ride.timestamps.acceptedAt!),
                         if (ride.timestamps.driverArrivedAt != null)
-                          _buildTimestampRow('وصول السائق', ride.timestamps.driverArrivedAt!),
+                          _buildTimestampRow(context.translate('orders.driverArrived'), ride.timestamps.driverArrivedAt!),
                         if (ride.timestamps.startedAt != null)
-                          _buildTimestampRow('بداية الرحلة', ride.timestamps.startedAt!),
+                          _buildTimestampRow(context.translate('orders.rideStarted'), ride.timestamps.startedAt!),
                         if (ride.timestamps.completedAt != null)
-                          _buildTimestampRow('انتهاء الرحلة', ride.timestamps.completedAt!),
+                          _buildTimestampRow(context.translate('orders.rideCompleted'), ride.timestamps.completedAt!),
                         if (ride.timestamps.cancelledAt != null)
-                          _buildTimestampRow('تاريخ الإلغاء', ride.timestamps.cancelledAt!),
+                          _buildTimestampRow(context.translate('orders.cancelledAt'), ride.timestamps.cancelledAt!),
                       ],
                     ),
                   ),
@@ -627,14 +614,14 @@ class _RideDetailBottomSheet extends StatelessWidget {
                   if (ride.status.toLowerCase() == 'cancelled') ...[
                     const SizedBox(height: 20),
                     _buildSection(
-                      title: 'معلومات الإلغاء',
+                      title: context.translate('orders.cancellationInfo'),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (ride.cancelledBy != null)
-                            _buildInfoRow('ملغي بواسطة', ride.cancelledBy!),
+                            _buildInfoRow(context.translate('orders.cancelledBy'), ride.cancelledBy!),
                           if (ride.cancellationReason != null)
-                            _buildInfoRow('سبب الإلغاء', ride.cancellationReason!),
+                            _buildInfoRow(context.translate('orders.cancellationReason'), ride.cancellationReason!),
                         ],
                       ),
                     ),
@@ -669,7 +656,7 @@ class _RideDetailBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String? status) {
+  Widget _buildStatusBadge(BuildContext context, String? status) {
     Color backgroundColor;
     Color textColor;
     String text;
@@ -678,17 +665,17 @@ class _RideDetailBottomSheet extends StatelessWidget {
       case 'completed':
         backgroundColor = AppColors.success.withOpacity(0.1);
         textColor = AppColors.success;
-        text = _OrdersStrings.completed;
+        text = context.translate('status.completed');
         break;
       case 'cancelled':
         backgroundColor = AppColors.error.withOpacity(0.1);
         textColor = AppColors.error;
-        text = _OrdersStrings.cancelled;
+        text = context.translate('status.cancelled');
         break;
       default:
         backgroundColor = AppColors.warning.withOpacity(0.1);
         textColor = AppColors.warning;
-        text = _OrdersStrings.inProgress;
+        text = context.translate('status.inProgress');
     }
 
     return Container(
@@ -760,27 +747,27 @@ class _RideDetailBottomSheet extends StatelessWidget {
     );
   }
 
-  String _getPaymentMethodText(String method) {
+  String _getPaymentMethodText(BuildContext context, String method) {
     switch (method.toLowerCase()) {
       case 'cash':
-        return 'نقدي';
+        return context.translate('ride.cash');
       case 'card':
-        return 'بطاقة';
+        return context.translate('ride.card');
       case 'wallet':
-        return 'محفظة';
+        return context.translate('orders.wallet');
       default:
         return method;
     }
   }
 
-  String _getPaymentStatusText(String status) {
+  String _getPaymentStatusText(BuildContext context, String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'قيد الانتظار';
+        return context.translate('rideDetail.paymentPending');
       case 'paid':
-        return 'مدفوع';
+        return context.translate('rideDetail.paymentPaid');
       case 'failed':
-        return 'فشل';
+        return context.translate('rideDetail.paymentFailed');
       default:
         return status;
     }
